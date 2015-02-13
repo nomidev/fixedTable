@@ -193,8 +193,6 @@
 
 					$(self).height(options.height);
 
-					console.log(this.getHeight());
-
 					this.fixedLeft.width(options.leftWidth);
 					this.fixedLeftHead.height(this.getLeftHeadHeight());
 					
