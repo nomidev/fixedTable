@@ -160,14 +160,40 @@
 						});
 					}
 				},
+				leftMouseWheel: function () {
+					var scrollCount = 0;
+
+					this.fixedLeftBody.on("mousewheel", function (e, delta) {
+						if (e.originalEvent.wheelDelta < 0) {
+							//scroll down
+							if (scrollCount < 0) {
+								return false;
+							} else {
+								$(self).scrollTop(scrollCount -= 100);
+							}
+							//console.log('Down',scrollCount);
+						} else {
+							if (scrollCount > $(self).scrollTop()) {
+								return false;
+							} else {
+								$(self).scrollTop(scrollCount += 100);
+							}
+							//console.log('Up',scrollCount);
+						}
+						return false;
+					})
+				},
 				build: function () {
 					this.setColor();
+					this.leftMouseWheel();
 
 					if (options.autoHeight) {
 						options.height = "100%";
 					}
 
 					$(self).height(options.height);
+
+					console.log(this.getHeight());
 
 					this.fixedLeft.width(options.leftWidth);
 					this.fixedLeftHead.height(this.getLeftHeadHeight());

@@ -6,6 +6,7 @@
 	<title>Document</title>
 	<script type="text/javascript" src="js/jquery-1.11.2.min.js"></script>
 	<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="js/jquery.mousewheel.js"></script>
 	<script type="text/javascript" src="js/jquery.fixedTable.js"></script>
 	<link rel="stylesheet" href="http://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
 
@@ -13,6 +14,13 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<script>
 		$(document).ready(function () {
+
+			var count = 0;
+
+			$("h1").on("click", function() {
+				count++
+				console.log(count);
+			})
 	
 			$(".fixed_wrap").fixedTable({
 				width: 1000,					//넓이
