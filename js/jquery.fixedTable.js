@@ -181,7 +181,7 @@
 							//console.log('Up',scrollCount);
 						}
 						return false;
-					})
+					})					
 				},
 				build: function () {
 					this.setColor();
