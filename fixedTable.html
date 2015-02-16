@@ -13,13 +13,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<script>
 		$(document).ready(function () {
-
-			var count = 0;
-
-			$("h1").on("click", function() {
-				count++
-				console.log(count);
-			})
+			$('.subTitle').textSlide();
 	
 			$(".fixed_wrap").fixedTable({
 				width: 1000,					//넓이
@@ -43,8 +37,8 @@
 <body>
 	<div class="wrap">
 		<header class="header">
-			<h1>Fixed Table</h1>
-			<p>틀고정 테이블</p>
+			<h1 class="subTitle">Fixed Table</h1>
+			<p class="subCopy">틀고정 테이블</p>
 		</header>
 		<div id="log"></div>
 		<section class="container">
