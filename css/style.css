@@ -6,17 +6,76 @@
 }
 .wrap .container {
 	padding: 20px;
-	height: 600px;
+	height: 500px;
 	border: 1px solid #eeeeee;
 }
 
-.container {
-	height: 600px;
+.header {
+	height: 80px;
+	margin-bottom: 20px;
+}
+
+/*hero*/
+.hero {
+	overflow: hidden;
+	position: relative;
+	margin: 0 auto;
+	width: 900px;
+	height: 300px;
+}
+
+.visual {
+	position: relative;
+}
+
+.visual > div {
+	position: absolute;
+	float: left;
+	width: 900px;
+	height: 300px;
+	background-color: #ddd;
+}
+
+.arrow {
+	position: absolute;
+	display: inline-block;
+	top: 50%;
+	z-index: 1000;
+}
+
+.navi {
+	position: absolute;
+	display: inline-block;
+	bottom: 50px;
+	z-index: 1000;
+}
+
+
+/*layer*/
+.layer {
+	position: absolute;
+	right: 0;
+	top: 50px;
+	width: 100px;
+	height: 30px;
+	background-color: skyblue;
+	z-index: 1000;
+}
+.top_btn {
+	display: none;
+	position: fixed;
+	right: 10px;
+	bottom: 5px;
+	width: 45px;
+	height: 45px;
+	background-color: #ddd;
+	z-index: 1000;
 }
 
 /* 틀고정 기본 스타일 */
 .fixed_wrap {
 	/* width: 100%; */
+	margin: 0 auto;
 	overflow: scroll;
 }
 .fixed_wrap table {

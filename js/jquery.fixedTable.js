@@ -1,7 +1,7 @@
 /*!
  * NAME: jQuery.fixedTable.js
  * DATE: 2015-02-13
- * VERSION: 0.0.2
+ * VERSION: 0.0.3
  * @author: nomi, nomisoul@gmail.com
  **/
 
@@ -11,7 +11,7 @@
 			var defaults = {
 				titleClass: "subTitle",
 				copyClass: "subCopy"
-			}
+			};
 			var options = $.extend({}, defaults, option);
 
 			return this.each(function () {
@@ -43,7 +43,7 @@
 				setTimeout( function(){
 					$('.' + options.copyClass).fadeIn( 500 );
 				} , 100 * (text.length + 1) );
-			})
+			});
 		},
 		fixedTable: function (opts) {
 			var defaults, options;
@@ -285,5 +285,33 @@
 				
 			})
 		}
+	})
+
+	$(document).ready(function () {
+		$(window).scroll(function () {
+			var top = $(window).scrollTop();
+			var left = $(window).scrollLeft();
+			var scrollHalf = $(window).height() / 2;
+
+			$(".layer").animate({
+				top: top + 50
+			}, {
+				queue: false,
+				duration: 500
+			})
+
+			if (top > scrollHalf) {
+				$(".top_btn").fadeIn();
+			} else {
+				$(".top_btn").fadeOut();
+			}
+
+		})
+
+		$(".top_btn").on("click", function () {
+			$("body").animate({
+				scrollTop: 0
+			});
+		}).css("cursor", "pointer");
 	})
 })(jQuery);

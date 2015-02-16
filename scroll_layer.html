@@ -5,32 +5,7 @@
 	<title>Document</title>
 	<script type="text/javascript" src="http://code.jquery.com/jquery-1.11.2.js"></script>
 	<script type="text/javascript">
-		$(document).ready(function () {
-			$(window).scroll(function () {
-				var top = $(window).scrollTop();
-				var left = $(window).scrollLeft();
-
-				$(".layer").animate({
-					top: top + 100
-				}, {
-					queue: false,
-					duration: 500
-				})
-
-				if (top > 700) {
-					$(".top_btn").fadeIn();
-				} else {
-					$(".top_btn").fadeOut();
-				}
-
-			})
-
-			$(".top_btn").on("click", function () {
-				$("body").animate({
-					scrollTop: 0
-				})
-			})
-		})
+		
 	</script>
 	<style>
 		html, body {
@@ -52,31 +27,12 @@
 			background-color: #ddd;
 		}
 
-		.layer {
-			position: absolute;
-			right: 0;
-			top: 100px;
-			width: 100px;
-			height: 30px;
-			background-color: skyblue;
-			z-index: 1000;
-		}
-		.top_btn {
-			display: none;
-			position: fixed;
-			right: 10px;
-			bottom: 10px;
-			width: 50px;
-			height: 50px;
-			background-color: #ddd;
-			z-index: 1000;
-		}
+		
 	</style>
 </head>
 <body>
 	<div class="wrap">
-		<div class="layer">layer</div>
-		<div class="top_btn">top</div>
+		
 		<div class="header">
 			header
 		</div>

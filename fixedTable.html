@@ -19,8 +19,8 @@
 				width: 1000,					//넓이
 				height: 300,					//높이
 				leftWidth: 500,					//고정 영역 사이즈
-				autoWidth: true,				//넓이 100% (상위 엘리먼트 기준)
-				autoHeight: true,				//높이 100% (상위 엘리먼트 기준)
+				autoWidth: false,				//넓이 100% (상위 엘리먼트 기준)
+				autoHeight: false,				//높이 100% (상위 엘리먼트 기준)
 				columResizable: true,			//TD 컬럼 리사이즈
 				columMaxWidth: 150,				//TD 컬럼 리사이즈 최대 크기(null값이면 크기제한 없음)
 				columMinWidth: 70,				//TD 컬럼 리사이즈 최소 크기(null값이면 크기제한 없음)
@@ -30,6 +30,55 @@
 				rightHeadBg: "#f2dede",			//오른쪽 상단 배경색
 				rightBodyBg: "#f5f5f5"			//오른쪽 하단 배경색
 			});
+
+			$(".visual > ").each(function (i, el) {
+				var w = 900
+				
+				$(this).css({
+					left: w * i
+				})
+
+			})
+
+			$(".next").on("click", function () {
+				var w = 900;
+				
+				$(".visual > ").each(function(i, el) {
+					console.log(i, el)
+					$(el).css({
+						left: -w
+					})
+
+					$(this).css({
+						left: w * i
+					})
+				})
+
+				$(".visual > ").first().appendTo(".visual");
+
+			})
+
+			$(".prev").on("click", function (e) {
+				e.preventDefault();
+				preveEl();
+				
+			})
+
+
+			var preveEl = function () {
+				var w = 900;
+				$(".visual > ").each(function(i, el) {
+					$(el).animate({
+						left: -w * i
+					})
+				})
+
+				$(".visual > ").last().prependTo(".visual");
+
+			}
+
+
+
 			
 		})
 	</script>
@@ -40,7 +89,26 @@
 			<h1 class="subTitle">Fixed Table</h1>
 			<p class="subCopy">틀고정 테이블</p>
 		</header>
-		<div id="log"></div>
+		<section>
+			<div class="hero">
+				<div class="visual">
+					<div>1</div>
+					<div>2</div>
+					<div>3</div>
+				</div>
+				<div class="arrow">
+					<a href="#" class="prev">PREV</a>
+					<a href="#" class="next">NEXT</a>
+				</div>
+				<div class="navi">
+					<span>
+						<a href="#">1</a>
+						<a href="#">2</a>
+						<a href="#">3</a>
+					</span>
+				</div>
+			</div>
+		</section>
 		<section class="container">
 			<div class="fixed_wrap">
 				<div class="fixed_left">
@@ -725,6 +793,7 @@
 		</section>
 		<footer class="footer">
 			<p>&copy; 2015 nomi.</p>
+			<div class="top_btn">top</div>
 		</footer>
 	</div>
 </body>
