@@ -1,7 +1,7 @@
 /*!
  * NAME: jQuery.fixedTable.js
  * DATE: 2015-02-13
- * VERSION: 0.0.3
+ * VERSION: 0.0.4
  * @author: nomi, nomisoul@gmail.com
  **/
 
@@ -148,7 +148,7 @@
 					},
 					columResizable: function (obj, bool) {
 						if(bool) {
-							$("table td", obj).each(function (i, el) {
+							$("table th", obj).each(function (i, el) {
 								var $target = $(obj).next().find("table td").eq(i);
 
 								$(el).resizable({
@@ -231,18 +231,25 @@
 						this.leftMouseWheel();
 
 						if (options.autoHeight) {
-							var parentHeight = $(self).parent().height();
-							options.height = parentHeight;
+							//var parentHeight = $(self).parent().height();
+							options.height = "100%";
 						} else {
 							$(self).height(options.height);
 						}
 
 						this.fixedLeft.width(options.leftWidth);
-						this.fixedLeftHead.height(this.getLeftHeadHeight());
+
+						if (this.fixedLeftHead.height() < this.fixedRightHead.find("table").height()) {
+							this.fixedLeftHead.height(this.fixedRightHead.find("table").height());
+							this.fixedLeftHead.children("table").height(this.fixedRightHead.find("table").height());
+						} else {
+							this.fixedLeftHead.height(this.getLeftHeadHeight());
+							this.fixedRightHead.children("table").height(this.getLeftHeadHeight());
+						}					
 						
-						this.fixedLeftBody.height(this.getHeight() - (this.getLeftHeadHeight() + options.scrollSize)).css({
-							"padding-top": this.getLeftHeadHeight()
-						});
+						this.fixedLeftBody.css({
+							"padding-top": this.fixedRightHead.height()
+						});						
 
 						if (options.autoWidth) {
 							this.windowResizable();
@@ -253,18 +260,11 @@
 
 						this.fixedRight.css({
 							"padding-left": options.leftWidth
-						});
-						
-						if (this.fixedLeftHead.height() < this.fixedRightHead.find("table").height()) {
-							this.fixedLeftHead.height(this.fixedRightHead.find("table").height());
-							this.fixedLeftHead.children("table").height(this.fixedRightHead.find("table").height());
-						} else {
-							this.fixedRightHead.children("table").height(this.getLeftHeadHeight());
-						}
+						});						
 
 						this.fixedRightBody.css({
-							"padding-top": this.getLeftHeadHeight()
-						});				
+							"padding-top": this.fixedRightHead.height()
+						});
 
 						this.setTrHeight();
 						this.linkScroll(this.fixedLeftBody, this.fixedRightHead);
@@ -274,6 +274,8 @@
 							this.columResizable(this.fixedRightHead, true);
 							this.columResizable(this.fixedLeft, false);
 						}
+
+						this.fixedLeftBody.outerHeight(this.getHeight() - (options.scrollSize));
 
 					},
 					init: function () {
