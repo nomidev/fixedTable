@@ -45,9 +45,10 @@
 	<script type="text/javascript">
 		$(function() {
 			function fnslider() {
-				$(".slider ul").children().eq(0).appendTo($(".slider ul"));
-				$(".slider ul").css("margin-left", 50);
-				$(".slider ul").stop().animate({marginLeft: 0})
+				$(".slider ul").stop().animate({marginLeft: "-50px"}).queue(function() {
+					$(".slider ul").children().eq(0).appendTo($(".slider ul"));
+					$(".slider ul").css("margin-left", 0);
+				});
 			}
 
 			var autoPlay = setInterval(fnslider, 3000);
