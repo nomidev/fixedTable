@@ -13,14 +13,14 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<script>
 		$(document).ready(function () {
-			$('.subTitle').textSlide();
+			$('.title').textSlide();
 	
 			$(".fixed_wrap").fixedTable({
 				width: 1000,					//넓이
 				height: 300,					//높이
 				leftWidth: 500,					//고정 영역 사이즈
-				autoWidth: true,				//넓이 100% (상위 엘리먼트 기준)
-				autoHeight: true,				//높이 100% (상위 엘리먼트 기준)
+				autoWidth: false,				//넓이 100% (상위 엘리먼트 기준)
+				autoHeight: false,				//높이 100% (상위 엘리먼트 기준)
 				columResizable: true,			//TD 컬럼 리사이즈
 				columMaxWidth: 150,				//TD 컬럼 리사이즈 최대 크기(null값이면 크기제한 없음)
 				columMinWidth: 70,				//TD 컬럼 리사이즈 최소 크기(null값이면 크기제한 없음)
