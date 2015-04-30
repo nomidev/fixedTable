@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
 	<meta charset="UTF-8">
 	<title>Document</title>
@@ -14,7 +14,7 @@
 		}
 		.box {
 			width: 300px;
-			height: 100px;
+			height: 50px;
 			border: 1px solid blue;
 		}
 		.box h4 {
@@ -22,7 +22,7 @@
 			margin: 0;
 			padding: 0;
 			width: 50px;
-			height: 100px;
+			height: 50px;
 			background-color: #777777;
 		}
 		.box .slider {
@@ -30,7 +30,7 @@
 			position: relative;
 			float: left;
 			width: 250px;
-			height: 100px;
+			height: 50px;
 		}
 		.box .slider ul {
 			position: absolute;
@@ -39,34 +39,42 @@
 		.box .slider ul li {
 			float: left;
 			width: 50px;
-			height: 100px;
+			height: 50px;
+			line-height: 50px;
+			text-align: center;
 		}
 	</style>
 	<script type="text/javascript">
 		$(function() {
 			function fnslider() {
-				$(".slider ul").stop().animate({marginLeft: "-50px"}).queue(function() {
-					$(".slider ul").children().eq(0).appendTo($(".slider ul"));
-					$(".slider ul").css("margin-left", 0);
+				var $slider = $(".slider ul");
+				$slider.stop().animate({marginLeft: "-50px"}).queue(function() {
+					$(this).children().eq(0).appendTo($slider);
+					$(this).css("margin-left", 0);
 				});
 			}
 
-			var autoPlay = setInterval(fnslider, 3000);
+			var autoPlay = setInterval(fnslider, 2000);
+
+			$(".slider").on("mouseenter", function() {
+				clearInterval(autoPlay);
+			});
+
+			$(".slider").on("mouseleave", function() {
+				autoPlay = setInterval(fnslider, 2000);
+			});
 
 			$(".stop").click(function() {
-				console.log("stop");
 				clearInterval(autoPlay);
 			});
 
 			$(".play").click(function() {
-				console.log("start");
-				autoPlay = setInterval(fnslider, 3000);
+				autoPlay = setInterval(fnslider, 2000);
 			});
 		})
 	</script>
 </head>
 <body>
-
 	<div class="box">
 		<h4>제목</h4>
 		<div class="slider">
@@ -85,7 +93,6 @@
 		</div>
 		<button class="stop">stop</button>
 		<button class="play">start</button>
-	</div>
-	
+	</div>	
 </body>
 </html>
