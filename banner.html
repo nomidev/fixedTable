@@ -65,7 +65,7 @@
 				$slider.stop(true, false).animate({marginLeft: "0px"}, "fast", function() {
 					$(this).children().last().prependTo($slider);
 					$(this).css("margin-left", -50);
-				})queue(true);
+				}).queue(true);
 			}
 
 			var autoPlay = setInterval(function() {moveLeft();}, 2000);
