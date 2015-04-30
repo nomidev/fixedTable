@@ -52,20 +52,20 @@
 				var $slider = $(".slider ul");
 				flag = true;
 
-				$slider.stop().animate({marginLeft: "-50px"}).queue(function() {
+				$slider.stop(false, true).animate({marginLeft: "-50px"}, "fast", function() {
 					$(this).children().eq(0).appendTo($slider);
 					$(this).css("margin-left", 0);
-				});
+				}).clearQueue();
 			}
 
 			function moveRight() {
 				var $slider = $(".slider ul");
 				flag = false;
 
-				$slider.stop().animate({marginLeft: "0px"}).queue(function() {
+				$slider.stop(true, false).animate({marginLeft: "0px"}, "fast", function() {
 					$(this).children().last().prependTo($slider);
 					$(this).css("margin-left", -50);
-				});
+				})queue(true);
 			}
 
 			var autoPlay = setInterval(function() {moveLeft();}, 2000);
@@ -78,7 +78,7 @@
 				if(flag) {
 					autoPlay = setInterval(function() {moveLeft();}, 2000);
 				} else {
-					autoPlay = setInterval(function() {moveLeft();}, 2000);
+					autoPlay = setInterval(function() {moveRight();}, 2000);
 				}
 			});
 
@@ -86,7 +86,7 @@
 				if(flag) {
 					autoPlay = setInterval(function() {moveLeft();}, 2000);
 				} else {
-					autoPlay = setInterval(function() {moveLeft();}, 2000);
+					autoPlay = setInterval(function() {moveRight();}, 2000);
 				}
 			});
 
@@ -97,7 +97,7 @@
 
 			$(".right").click(function() {
 				clearInterval(autoPlay);
-				autoPlay = setInterval(function() {moveLeft();}, 2000);
+				autoPlay = setInterval(function() {moveRight();}, 2000);
 			});
 
 			$(".stop").click(function() {
