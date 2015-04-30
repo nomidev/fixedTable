@@ -46,30 +46,62 @@
 	</style>
 	<script type="text/javascript">
 		$(function() {
-			function fnslider() {
+			var flag = true;
+
+			function moveLeft() {
 				var $slider = $(".slider ul");
+				flag = true;
+
 				$slider.stop().animate({marginLeft: "-50px"}).queue(function() {
 					$(this).children().eq(0).appendTo($slider);
 					$(this).css("margin-left", 0);
 				});
 			}
 
-			var autoPlay = setInterval(fnslider, 2000);
+			function moveRight() {
+				var $slider = $(".slider ul");
+				flag = false;
+
+				$slider.stop().animate({marginLeft: "0px"}).queue(function() {
+					$(this).children().last().prependTo($slider);
+					$(this).css("margin-left", -50);
+				});
+			}
+
+			var autoPlay = setInterval(moveLeft, 2000);
 
 			$(".slider").on("mouseenter", function() {
 				clearInterval(autoPlay);
 			});
 
 			$(".slider").on("mouseleave", function() {
-				autoPlay = setInterval(fnslider, 2000);
+				if(flag) {
+					autoPlay = setInterval(moveLeft, 2000);
+				} else {
+					autoPlay = setInterval(moveRight, 2000);
+				}
+			});
+
+			$(".play").click(function() {
+				if(flag) {
+					autoPlay = setInterval(moveLeft, 2000);
+				} else {
+					autoPlay = setInterval(moveRight, 2000);
+				}
+			});
+
+			$(".left").click(function() {
+				clearInterval(autoPlay);
+				autoPlay = setInterval(moveLeft, 2000);
+			});
+
+			$(".right").click(function() {
+				clearInterval(autoPlay);
+				autoPlay = setInterval(moveRight, 2000);
 			});
 
 			$(".stop").click(function() {
 				clearInterval(autoPlay);
-			});
-
-			$(".play").click(function() {
-				autoPlay = setInterval(fnslider, 2000);
 			});
 		})
 	</script>
@@ -93,6 +125,8 @@
 		</div>
 		<button class="stop">stop</button>
 		<button class="play">start</button>
+		<button class="left">left</button>
+		<button class="right">right</button>
 	</div>	
 </body>
 </html>
