@@ -68,7 +68,7 @@
 				});
 			}
 
-			var autoPlay = setInterval(moveLeft, 2000);
+			var autoPlay = setInterval(function() {moveLeft();}, 2000);
 
 			$(".slider").on("mouseenter", function() {
 				clearInterval(autoPlay);
@@ -76,28 +76,28 @@
 
 			$(".slider").on("mouseleave", function() {
 				if(flag) {
-					autoPlay = setInterval(moveLeft, 2000);
+					autoPlay = setInterval(function() {moveLeft();}, 2000);
 				} else {
-					autoPlay = setInterval(moveRight, 2000);
+					autoPlay = setInterval(function() {moveLeft();}, 2000);
 				}
 			});
 
 			$(".play").click(function() {
 				if(flag) {
-					autoPlay = setInterval(moveLeft, 2000);
+					autoPlay = setInterval(function() {moveLeft();}, 2000);
 				} else {
-					autoPlay = setInterval(moveRight, 2000);
+					autoPlay = setInterval(function() {moveLeft();}, 2000);
 				}
 			});
 
 			$(".left").click(function() {
 				clearInterval(autoPlay);
-				autoPlay = setInterval(moveLeft, 2000);
+				autoPlay = setInterval(function() {moveLeft();}, 2000);
 			});
 
 			$(".right").click(function() {
 				clearInterval(autoPlay);
-				autoPlay = setInterval(moveRight, 2000);
+				autoPlay = setInterval(function() {moveLeft();}, 2000);
 			});
 
 			$(".stop").click(function() {
