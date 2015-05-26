@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Document</title>
+	<script type="text/javascript" src="js/jquery-1.11.2.min.js"></script>
+	<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="js/jquery.fixedTable.js"></script>
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
+
+	<link rel="stylesheet" href="css/style.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			var $fixedWrap, $topHeight, $winHeight, $prevNodes, $nextNodes, $prevAllHeight, $nextAllHeight;
+
+			var dummy_contents1 = "";
+
+			for (var i = 1; i < 100; i++) {
+				dummy_contents1 += '<tr>';
+				dummy_contents1 += '	<td rowspan="2">' + i + '<br/><input type="checkbox" id="" name="" /></td>';
+				dummy_contents1 += '	<td rowspan="2">과장</td>';
+				dummy_contents1 += '	<td><b>홍길동</b></td>';
+				dummy_contents1 += '</tr>';
+				dummy_contents1 += '<tr>';
+				dummy_contents1 += '	<td>2014-05-01</td>';
+				dummy_contents1 += '</tr>';
+			}
+
+			$('.fixed_left_body table tbody').prepend(dummy_contents1);
+
+			var dummy_contents2 = "";
+
+			for (var i = 1; i < 100; i++) {
+				dummy_contents2 += '<tr>';
+				dummy_contents2 += '	<td>1,900,000</td>';
+				dummy_contents2 += '	<td>100,000</td>';
+				dummy_contents2 += '	<td>2,000,000</td>';
+				dummy_contents2 += '	<td class="sum">2,000,000</td>';
+				dummy_contents2 += '	<td>50,000</td>';
+				dummy_contents2 += '	<td>2,000</td>';
+				dummy_contents2 += '	<td><i>*</i>10,000</td>';
+				dummy_contents2 += '	<td>10,000</td>';
+				dummy_contents2 += '	<td class="sum">2,000,000</td>';
+				dummy_contents2 += '	<td class="sum">2,000,000</td>';
+				dummy_contents2 += '</tr>';
+				dummy_contents2 += '<tr>';
+				dummy_contents2 += '	<td>300,000</td>';
+				dummy_contents2 += '	<td class="etc" colspan="2">2,000,000</td>';
+				dummy_contents2 += '	<td class="last_month">1,900,00</td>';
+				dummy_contents2 += '	<td>2,000</td>';
+				dummy_contents2 += '	<td class="etc"><i>*</i>200,000</td>';
+				dummy_contents2 += '	<td class="etc" colspan="2">2,000,000</td>';
+				dummy_contents2 += '	<td class="last_month">1,900,000</td>';
+				dummy_contents2 += '	<td class="last_month">1,900,000</td>';
+				dummy_contents2 += '</tr>';
+			}
+
+			$('.fixed_right_body table tbody').prepend(dummy_contents2);
+
+			//선택된 객체에 레이어 삽입
+			var $is_visible = false;
+
+			$('.fixed_right_body table tbody tr').each(function (i, el) {
+				var $child = $(el).children('.etc').eq(2);
+				var cnt = '';
+
+				cnt += '<div class="layer">';
+				cnt += '	<a href="" class="close">close</a>';
+				cnt += '</div>';
+
+				$child.css('backgroundColor', '#ffffaa');
+
+				$child.click(function(e) {
+					if ($is_visible) {
+						if (e.target == this) alert('먼저 편집하던 곳을 완료해야 합니다.');
+					} else {
+						var w = $(this).outerWidth();
+
+						$is_visible = true;
+
+						$(this).append(cnt);
+
+						$(this).children('.layer').width(w - 1);
+
+						$('.fixed_right_body').find('.layer').children('.close').on('click', function (e) {
+							$is_visible = false;
+							$(this).closest('.layer').remove();
+							$(".fixed_right_body table tr").css('backgroundColor', '#ffffff');
+							return false;
+						});
+					}
+				});
+			});
+
+			//브라우저 크기에 따라 틀고정 컨테이너 높이 변경
+			$fixedWrap = $('.container');
+			$topHeight = $('.top_header').outerHeight(true),
+			$winHeight = $(window).outerHeight(true),
+			$prevNodes = $fixedWrap.prevAll(),
+			$nextNodes = $fixedWrap.nextAll();
+			$prevAllHeight = 0;
+			$nextAllHeight  = 0;
+
+			for (var i = 0; i < $prevNodes.length; i++) {
+				if ($prevNodes.eq(i).height() == 0) continue;
+				$prevAllHeight += $prevNodes.eq(i).outerHeight(true);
+			}
+
+			for (var i = 0; i < $nextNodes.length; i++) {
+				if ($nextNodes.eq(i).height() == 0) continue;
+				$nextAllHeight += $nextNodes.eq(i).outerHeight(true);
+			}
+
+			$(window).resize(function() {
+				$winHeight = $(window).outerHeight(true);
+
+				$('.container').outerHeight(function() {
+					return $winHeight - ($topHeight + $prevAllHeight + $nextAllHeight + 20);
+				});
+			}).resize();
+
+			// tr이 짝수 일때만 bottom 라인 색 진하게 표시
+			$('.payroll .fixed_wrap .fixed_right .fixed_right_body table tr:nth-child(even) td').css('border-bottom-color', '#000000');
+
+			//틀고정 활성화
+			$(".fixed_wrap").fixedTable({
+				width: 1200,					//넓이
+				height: 600,					//높이
+				leftWidth: 300,					//고정 영역 사이즈
+				autoWidth: true,				//넓이 100% (상위 엘리먼트 기준)
+				autoHeight: true,				//높이 100% (상위 엘리먼트 기준)
+				//borderColor : "#bbbbbb",         //TD 테두리 색상
+				leftHeadBg : "#e2eddd",         //왼쪽 상단 배경색
+				leftBodyBg : "#e8e9ed",         //왼쪽 하단 배경색
+				rightHeadBg : "#eadddd",        //오른쪽 상단 배경색
+				rightBodyBg : "#ffffff"         //오른쪽 하단 배경색
+			});
+
+			// tr에 마우스 오버시 배경 색상 변경
+			var $datalen = $(".fixed_right_body table tr").length;
+
+			$(".fixed_right_body table tr").each(function (i, el) {
+				$(this).on('mouseover mouseout', function(e) {
+					if (e.type === 'mouseover') {
+						if (i < ($datalen - 7)) {
+							$(this).css('background-color', '#e8e9ed');
+							if ( i % 2 == 0) {
+								$(this).next('tr').css('background-color', '#e8e9ed');
+							} else {
+								$(this).prev('tr').css('background-color', '#e8e9ed');
+							}
+						}
+
+					}
+					if (e.type === 'mouseout') {
+						$(this).css('background-color', '#ffffff');
+						if ( i % 2 == 0) {
+							$(this).next('tr').css('background-color', '#ffffff');
+						} else {
+							$(this).prev('tr').css('background-color', '#ffffff');
+						}
+
+					}
+				});
+
+			});
+
+		});
+	</script>
+</head>
+<body class="body">
+	<!-- header -->
+
+	<!-- //header -->
+
+	<!-- 급여관리시작 -->
+	<div class="renew_body" id="renew_body">
+		<form>
+			<h1>틀고정 샘플</h1>
+			<!-- 급여관리대장 -->
+			<div class="container payroll">
+				<div class="fixed_wrap">
+					<div class="fixed_left">
+						<div class="fixed_left_head">
+							<!-- 왼쪽 상단 테이블 -->
+							<table summary="">
+								<caption></caption>
+								<colgroup>
+									<col width="50" />
+									<col width="100" />
+									<col width="*" />
+								</colgroup>
+								<thead>
+									<tr>
+										<th rowspan="3">번호</th>
+										<th rowspan="3">직책</th>
+										<th>&nbsp;</th>
+									</tr>
+									<tr>
+										<th>성명</th>
+									</tr>
+									<tr>
+										<th>입사일</th>
+									</tr>
+								</thead>
+							</table>
+						</div>
+						<div class="fixed_left_body">
+							<!-- 왼쪽 하단 테이블 -->
+							<table summary="">
+								<caption></caption>
+								<colgroup>
+									<col width="50" />
+									<col width="100" />
+									<col width="*" />
+								</colgroup>
+								<tbody>
+									<!--
+									sample code
+									화면에 보이는 데이터는 js로 삽입
+									 <tr>
+										<td rowspan="2">1</td>
+										<td rowspan="2">과장</td>
+										<td><b>홍길동</b></td>
+									</tr>
+									<tr>
+										<td>2014-05-01</td>
+									</tr>
+									-->
+									<tr class="sum">
+										<td colspan="3" rowspan="2">계(200명)</td>
+									</tr>
+									<tr>
+
+									</tr>
+									<tr class="default">
+										<td colspan="3"><b>입사</b></td>
+									</tr>
+									<tr class="default">
+										<td colspan="3"><b>휴직</b></td>
+									</tr>
+									<tr class="default">
+										<td colspan="3"><b>퇴사</b></td>
+									</tr>
+									<tr class="default">
+										<td colspan="3"><b>특이사항</b></td>
+									</tr>
+									<tr class="default">
+										<td colspan="3"><b>특이사항2</b></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="fixed_right">
+						<div class="fixed_right_head">
+							<!-- 오른쪽 상단 테이블 -->
+							<table summary="">
+								<caption></caption>
+								<colgroup>
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+								</colgroup>
+								<thead>
+									<tr>
+										<th colspan="4" class="green">급여내역</th>
+										<th colspan="5">공제내역</th>
+										<th rowspan="3">실수령액</th>
+									</tr>
+									<tr>
+										<th class="green">기본급</th>
+										<th class="green">식대</th>
+										<th class="green">자가운전보조비</th>
+										<th class="green" rowspan="2">급여합계</th>
+										<th>소득세</th>
+										<th>주민세</th>
+										<th>건강장기보험</th>
+										<th>상조회비</th>
+										<th rowspan="2">공제액 계</th>
+									</tr>
+									<tr>
+										<th class="green">연장근로수당</th>
+										<th colspan="2" class="green">기타(출장비/인센티브/선급금 등)</th>
+										<th>고용보험</th>
+										<th>국민연금</th>
+										<th colspan="2">기타(리조트/환급/공제차감)</th>
+									</tr>
+								</thead>
+							</table>
+						</div>
+						<div class="fixed_right_body">
+							<!-- 오른쪽 하단 테이블 -->
+							<table summary="">
+								<caption></caption>
+								<colgroup>
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+									<col width="120" />
+								</colgroup>
+								<tbody>
+									<!--
+									sample code
+									화면에 보이는 데이터는 js로 삽입
+									<tr>
+										<td>1,900,000</td>
+										<td>100,000</td>
+										<td>2,000,000</td>
+										<td class="sum">2,000,000</td>
+										<td>50,000</td>
+										<td>2,000</td>
+										<td><i>*</i>10,000</td>
+										<td>10,000</td>
+										<td class="sum">2,000,000</td>
+										<td class="sum">2,000,000</td>
+									</tr>
+									<tr>
+										<td>300,000</td>
+										<td class="etc" colspan="2">2,000,000</td>
+										<td class="last_month">1,900,00</td>
+										<td>2,000</td>
+										<td class="etc"><i>*</i>200,000</td>
+										<td class="etc" colspan="2">2,000,000</td>
+										<td class="last_month">1,900,000</td>
+										<td class="last_month">1,900,000</td>
+									</tr>
+									 -->
+									<tr class="sum">
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+									</tr>
+									<tr class="default sum">
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+									</tr>
+									<tr class="default">
+										<td colspan="10"><input type="text" /></td>
+									</tr>
+									<tr class="default">
+										<td colspan="10"><input type="text" /></td>
+									</tr>
+									<tr class="default">
+										<td colspan="10"><input type="text" /></td>
+									</tr>
+									<tr class="default">
+										<td colspan="10"><input type="text" /></td>
+									</tr>
+									<tr class="default">
+										<td colspan="10"><input type="text" /></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+			<p>&nbsp;</p>
+			<div>
+				<input type="button" value="취소" />
+				<input type="button" value="저장" />
+				<input type="button" value="목록" />
+			</div>
+		</form>
+	</div>
+	<!-- 급여관리시작 -->
+
+</body>
+</html>

@@ -1,7 +1,7 @@
 /*!
  * NAME: jQuery.fixedTable.js
- * DATE: 2015-05-11
- * VERSION: 0.0.500
+ * DATE: 2015-02-13
+ * VERSION: 0.0.4
  * DESCRIPTION: 틀고정 테이블
  * @author: nomi, nomisoul@gmail.com
  **/
@@ -22,7 +22,9 @@
 				leftHeadBg: "#e2eddd",			//왼쪽 상단 배경색
 				leftBodyBg: "#d9edf7",			//왼쪽 하단 배경색
 				rightHeadBg: "#eadddd",			//오른쪽 상단 배경색
-				rightBodyBg: "#f5f5f5"			//오른쪽 하단 배경색
+				rightBodyBg: "#f5f5f5",			//오른쪽 하단 배경색
+				cellHoverColor: "rgb(255, 221, 244)",
+				cellOutColor: "cellOutColor"
 			};
 
 			options = $.extend({}, defaults, opts);
@@ -40,22 +42,22 @@
 					secondNodeBody: $(self).children().eq(1).children().eq(1),
 					firstNodeHeader: $(self).children().eq(0).children().eq(0).find("table"),
 					getWidth: function () {
-						return $(self).width();
+						return $(self).outerWidth(true);
 					},
 					getHeight: function () {
-						return $(self).height();
+						return $(self).outerHeight(true);
 					},
 					getParentWidth: function () {
-						return $(self).parent().outerWidth();
+						return $(self).parent().outerWidth(true);
 					},
 					getParentHeight: function () {
-						return $(self).parent().height();
+						return $(self).parent().outerHeight(true);
 					},
 					getLeftHeadWidth: function () {
-						return this.firstNodeHeader.width();
+						return this.firstNodeHeader.outerWidth(true);
 					},
 					getLeftHeadHeight: function () {
-						return this.firstNodeHeader.height();
+						return this.firstNodeHeader.outerHeight(true);
 					},
 					getNodesLength: function () {
 						return $(self).children().length;
@@ -107,6 +109,9 @@
 
 							if (options.autoHeight) {
 								$(self).height(this.getParentHeight());
+								if (this.getNodesLength() !== 1) {
+									this.firstNodeBody.outerHeight(this.getHeight() - options.scrollSize);
+								}
 							} else {
 								$(self).height(options.height);
 							}
@@ -115,9 +120,11 @@
 								if (options.autoWidth) {
 									//this.firstNode.width($(self).width() - options.scrollSize);
 									this.firstNodeHead.width($(self).width() - options.scrollSize);
+									this.firstNodeBody.width($(self).width() - options.scrollSize);
 								} else {
 									//this.firstNode.width(options.width - options.scrollSize);
 									this.firstNodeHead.width(options.width - options.scrollSize);
+									this.firstNodeBody.width(options.width - options.scrollSize);
 								}
 								this.firstNodeBody.css({
 									"padding-top": this.firstNodeHead.height()
@@ -137,11 +144,12 @@
 							if (options.autoWidth) {
 								$(self).width(this.getParentWidth());
 								this.firstNodeHead.width($(self).width() - options.scrollSize);
+								this.firstNodeBody.width($(self).width() - options.scrollSize);
 							}
 						} else if (this.getNodesLength() == 2) {
 							if (options.autoWidth) {
-								$(self).width(this.getParentWidth() + 17);
-								this.secondNodeHead.width(this.getParentWidth() - options.leftWidth);
+								$(self).width(this.getParentWidth());
+								this.secondNodeHead.width(this.getParentWidth() - options.leftWidth - options.scrollSize);
 							}
 						}
 					},
@@ -170,9 +178,10 @@
 					},
 					build: function () {
 						this.setColor();
-						this.leftMouseWheel();
 
 						if (this.getNodesLength() == 1) {
+							this.firstNode.css('position', 'static');
+							this.firstNodeHead.css('top','initial');
 							if (options.autoWidth || options.autoHeight) {
 								this.windowResizable();
 							} else {
@@ -186,9 +195,11 @@
 							});
 
 							this.linkScroll(null, this.firstNodeHead);
-							this.firstNodeBody.outerHeight(this.getHeight() - options.scrollSize);
+							//this.firstNodeBody.outerHeight(this.getHeight() - options.scrollSize);
 
 						} else if (this.getNodesLength() == 2) {
+							this.leftMouseWheel();
+
 							if (options.autoWidth || options.autoHeight) {
 								this.windowResizable();
 							} else {

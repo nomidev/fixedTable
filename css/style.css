@@ -77,6 +77,7 @@
 	/* width: 100%; */
 	margin: 0 auto;
 	overflow: scroll;
+	font-size: 12px;
 }
 .fixed_wrap table {
 	table-layout: fixed;
@@ -114,3 +115,78 @@
 	width: 70px;
 }
 /* //틀고정 스타일 */
+.container .fixed_wrap table tr th,
+.container .fixed_wrap table tr td {
+	padding: 2px;
+	border: 1px solid #ccc;
+	word-break: break-all;
+	white-space: nowrap;
+}
+.payroll .fixed_wrap table th,
+.payroll .fixed_wrap table td {
+	padding: 2px 5px !important;
+}
+.payroll .fixed_wrap .fixed_left {
+	z-index: 100;
+}
+.payroll .fixed_wrap .fixed_right .fixed_right_head {
+	z-index: 100;
+}
+.payroll .fixed_wrap .fixed_left .fixed_left_head table th,
+.payroll .fixed_wrap .fixed_right .fixed_right_head table th {
+	height: 23px;
+}
+.payroll .fixed_wrap .fixed_left .fixed_left_head th {
+	height: auto;
+}
+.payroll .fixed_wrap .fixed_left .fixed_left_body tr {
+	height: 35px;
+}
+.payroll .fixed_wrap .fixed_left .fixed_left_body table td,
+.payroll .fixed_wrap .fixed_right .fixed_right_body table td {
+	text-align: center;
+}
+.payroll .fixed_wrap .fixed_right .fixed_right_body table td {
+	text-align: right;
+}
+.payroll .fixed_wrap .fixed_right .fixed_right_body table td input {
+	width: 100%;
+	*width: 98%;
+	box-sizing: border-box;
+}
+.payroll .fixed_wrap table th.green {
+	color: #000;
+	background-color: #e2eddd !important;
+}
+.payroll .fixed_wrap table tr.default td {
+	border-bottom-color: #ccc !important;
+}
+.payroll .fixed_wrap table tr.sum td {
+	background-color: #e7f3f8 !important;
+}
+.payroll .fixed_wrap .fixed_right .fixed_right_body table td {
+	position: relative;
+}
+.payroll .fixed_wrap .fixed_right .fixed_right_body table td i {
+	color: red;
+	font-style: normal;
+}
+.payroll .fixed_wrap .fixed_right .fixed_right_body table td.sum {
+	font-weight: bold;
+}
+.payroll .fixed_wrap .fixed_right .fixed_right_body table td.etc {
+	color: #1f4de5;
+}
+.payroll .fixed_wrap .fixed_right .fixed_right_body table td.last_month {
+	color: #a600e4;
+}
+.payroll .fixed_wrap .fixed_right .fixed_right_body table td .layer {
+	z-index: 200;
+	position: absolute;
+	top: 34px;
+	left: -1px;
+	width: 200px;
+	height: 300px;
+	border: 1px solid #000000;
+	background-color: #ffffaa;
+}
