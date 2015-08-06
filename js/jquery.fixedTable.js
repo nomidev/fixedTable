@@ -246,3 +246,691 @@
 		}
 	});
 })(jQuery);
+
+
+
+/*
+    주어진 div id 영역의 height를 브라우저 사이즈에 맞도록 조절하고 
+    해당 div 영역에  스크롤바를 붙여 그외 상단 Div영역을 고정하는 효과를 얻는 함수.
+    (프레임으로 나누어 고정하는 것과 동일한 효과)
+    
+    스크롤을 붙일 div 영역은 아래와 같이 position:absolute 속성을 주거나 스타일을
+    지정해야 한다.
+
+    <div id="content" style="position:absolute; padding-bottom:15px; width:100%; overflow:auto;">
+    
+    사용예) <HTML><HEAD><SCRIPT> 영역 하단에 아래 줄 추가
+            addLoadEvent( divFixOnLoad("content") );
+
+    김지성, 2008. 08. 05   
+*/
+
+
+// window.load 이벤트를 겹쳐쓰기 없이 추가
+// 김지성, 2008. 08. 05
+function addLoadEvent(func) {
+    var oldOnLoad = window.onload;
+    if (typeof window.onload != 'function') {
+        window.onload = func;
+    } else {
+        window.onload = function() {
+        oldOnLoad();
+        func();
+        }
+    }
+}
+
+//Wrapper function <script></script> 영역에서 사용
+function divFixOnLoad(divId) {
+    return function() { divFixInit(divId) };
+}
+
+/*
+ <body onload="divFixInit('divId')">
+ 혹은 jsp 최하단에
+ <script type="text/javascript">divFixInit('divId');</script>
+ 와 같이 직접 핸들러를 붙일 수 있음
+*/
+function divFixInit(divId) {
+    var cont = document.getElementById(divId);
+
+    var offsetTop = findPosY(cont);
+    // style 적용
+    cont.style.position = "absolute";
+    cont.style.paddingBottom = "15px";
+    jQuery(cont).width ( document.body.clientWidth - findPosX(cont)  - marginLeft );
+    cont.style.overflow = "auto";
+    
+    // Initialize div height
+    cont.style.height = document.body.clientHeight - offsetTop;
+    cont.style.top = offsetTop;
+
+    // Def. Event handler of widnow.onresize
+    var divResize = function(cont) {
+        return function() { 
+        	
+        	// top 및 height 재계산 
+        	cont.style.position = "static";
+        	var offsetTop2 = findPosY(cont);
+        	cont.style.position = "absolute";
+            jQuery(cont).width ( document.body.clientWidth - findPosX(cont)  - marginLeft );
+
+            cont.style.height = document.body.clientHeight - offsetTop2;
+            cont.style.top = offsetTop2;
+        }
+    }
+
+    // Attach event handler
+    window.onresize = divResize(cont);  
+}
+
+
+
+/*
+    -----------------------------------------------------------
+    테이블 헤더 틀고정 스크립트
+    
+    2008. 06. 31 김지성
+    -----------------------------------------------------------
+    Desc : 지정된 div id에 담긴 테이블의 열, 행 고정을 수행
+           테이블 하단의 페이징 처리 Div 영역도 처리 가능
+           
+    Useage : document.body.onload 혹은 body 제일 하단에서
+             (XJOS와 같은 기타 body.onload 함수가 쓰일 경우)
+             headerFixInit(...) 호출 
+            
+             테이블은 반드시 웹표준에 따라 다음과 같은 형식을
+             가져야 틀고정 적용이 가능하다.
+
+               <table>
+                 <thead>
+                   <tr>
+                     <th></th>
+                   </tr>
+                 </thead>
+                 <tbody>
+                   <tr>
+                     <td></td>
+                   </tr>
+                 </tbody>
+               </table>
+
+    -----------------------------------------------------------
+    headerFixInit( input1, input2 [, input3] )
+    
+    input1      : 틀고정할 대상 테이블을 담는 Div 영역 id
+    input2      : 열고정할 컬럼 수
+    input3(opt) : 페이징 처리 시 페이징 부분을 담는 Div 영역 id
+    -----------------------------------------------------------
+ */
+
+/* // TODO : 아래 변수와 함께 closure 사용으로 변경하자.
+
+var headerFixObj = {
+                      divMn : null,
+                      divTl : null,
+                      divTr : null,
+                      divBl : null,
+                      divBr : null,
+                     
+                      divWidth  : null,
+                      divHeight : null,
+                      divTop    : null,
+                      divLeft   : null,
+                     
+                      divPageId   : "",
+                      divPageTop  : null,
+                      divPageLeft : null,
+                     
+                      rowFixCnt : 0
+                    };
+                   
+var headerFixUserConf = { 
+                          minHeight : "100px",      // TBODY 내용의 최소 Height 설정
+                          marginLeft : "30px",      // 테이블의 우측 마진 값
+                          mainTitleHeight : "10px"  // Title 영역이 로딩 후 동적으로 생기기 때문에 이 영역 높이를 지정
+                        };
+ */
+
+var _div_mn; 
+var _div_tl; 
+var _div_tr; 
+var _div_bl; 
+var _div_br; 
+
+var _divWidth; 
+var _divHeight; 
+var _divTop; 
+var _divLeft;
+ 
+var _divPageTop;
+var _divPageLeft;
+var _pageDivId = ""; // Div id of a paging area
+var _rowFixCnt = 0; // 헤더 고정되는 row 갯수
+
+//// 사용자 정의 
+var minHeight = 100; // TBODY 내용의 최소 Height 설정
+var marginLeft = 30; // 테이블의 우측 마진 값
+var mainTitleHeight = 0;   // Title 영역이 로딩 후 동적으로 생기기 때문에 이 영역 높이를 지정
+
+
+function headerFixInit(headerFixDivId, pageDivId) {
+  _pageDivId = pageDivId == undefined ? "" : pageDivId;
+
+  var div_header = null;
+  var div_mn_tbody; 
+  var div_mn_header;
+
+  _div_mn = document.getElementById(headerFixDivId);    // 헤더고정할 div 영역
+
+  // TBODY 영역에 대해 모든 TR의 높이를 스타일로 세팅
+  var trs = _div_mn.getElementsByTagName("TBODY")[0].getElementsByTagName("TR");
+
+  for(var inx=0, max=trs.length; inx<max; inx++) {
+    
+      //trs[inx].firstChild.style.height = trs[inx].firstChild.clientHeight;
+      jQuery(trs[inx]).first().children().height( (jQuery(trs[inx]).first().children().get()).clientHeight );
+  }
+
+  // THEAD 영역에 대해 모든 셀의 높이와 너비를 스타일로 세팅
+  var trs = _div_mn.getElementsByTagName("THEAD")[0].getElementsByTagName("TR");
+  _rowFixCnt = trs.length;
+
+  for(var inx=0, max=trs.length; inx<max; inx++) {
+
+      var ths = trs[inx].getElementsByTagName("TH");
+
+      for(var jnx=0; jnx<ths.length; jnx++) {
+        ths[jnx].setAttribute("fixHeight", ths[jnx].clientHeight);
+        ths[jnx].setAttribute("fixWidth",  ths[jnx].clientWidth);
+      }
+  }
+
+  var trs = _div_mn.getElementsByTagName("TBODY")[0].getElementsByTagName("TR");
+
+  // TBODY의 너비 세팅
+  for(var inx=0, max=_rowFixCnt; inx<max; inx++) {
+
+      var tds = trs[inx].getElementsByTagName("TD");
+    
+      for(var jnx=0; jnx<tds.length; jnx++) {
+        tds[jnx].setAttribute("fixHeight", tds[jnx].clientHeight);
+        tds[jnx].setAttribute("fixWidth", tds[jnx].clientWidth);
+      }
+  }
+  
+  // selectedIndex란 attribute로 따로 세팅하고 cloneNode 후 다시 selected 세팅 (IE)
+  setSelectedBeforeCloneNode(_div_mn.getElementsByTagName("SELECT"));
+  
+  // 분할 div 테이블 영역 생성
+  _div_tl = _div_mn.cloneNode(true);
+  _div_tr = _div_mn.cloneNode(true);
+  _div_bl = _div_mn.cloneNode(true);
+  _div_br = _div_mn.cloneNode(true);
+
+  //jQuery(_div_tr).css("background","gray");
+  //jQuery(_div_br).css("background","gray");
+
+  jQuery(_div_tl).find("table").css("table-layout","fixed");
+  jQuery(_div_tr).find("table").css("table-layout","fixed");
+  jQuery(_div_bl).find("table").css("table-layout","fixed");
+  jQuery(_div_br).find("table").css("table-layout","fixed");
+
+  jQuery(_div_tl).find("td").css("text-overflow","ellipsis").css("overflow","hidden");
+  jQuery(_div_tr).find("td").css("text-overflow","ellipsis").css("overflow","hidden");
+  jQuery(_div_bl).find("td").css("text-overflow","ellipsis").css("overflow","hidden");
+  jQuery(_div_br).find("td").css("text-overflow","ellipsis").css("overflow","hidden");
+
+  jQuery(_div_tl).find("table").width(jQuery(_div_tl).width());
+  jQuery(_div_tr).find("table").width(jQuery(_div_tr).width());
+  jQuery(_div_bl).find("table").width(jQuery(_div_bl).width());
+  jQuery(_div_br).find("table").width(jQuery(_div_br).width());
+
+  _div_tl.setAttribute("id", "");
+  _div_tr.setAttribute("id", "");
+  _div_bl.setAttribute("id", "");
+  _div_br.setAttribute("id", "");
+  
+  _div_tl.style.position = 'absolute'; 
+  _div_tl.style.overflow = 'hidden'; 
+  _div_tl.style.display = "none";
+  _div_tr.style.position = 'absolute'; 
+  _div_tr.style.overflow = 'hidden'; 
+  _div_tr.style.display = "none";
+  _div_bl.style.position = 'absolute'; 
+  _div_bl.style.overflow = 'hidden'; 
+  _div_bl.style.display = "none";
+  _div_br.style.position = 'absolute'; 
+  _div_br.style.overflow = 'auto'; 
+  _div_br.style.display = "none";
+  
+  _div_br.onscroll = _onScrolling;
+
+  // 원본 div 테이블 영역 앞에 분할 생성한 div를 삽입
+  _div_mn.parentNode.insertBefore(_div_tl, _div_mn);
+  _div_mn.parentNode.insertBefore(_div_tr, _div_mn);
+  _div_mn.parentNode.insertBefore(_div_bl, _div_mn);
+  _div_mn.parentNode.insertBefore(_div_br, _div_mn);
+
+
+  // _div_mn 
+  div_mn_tbody = _div_mn.getElementsByTagName("tbody")[0]; 
+  div_mn_header = _div_mn.getElementsByTagName("tr")[0].getElementsByTagName("th");
+
+  // 분할될 테이블에서 우상단 테이블의 첫번째 셀을 뽑아낸다.(우측div 영역의 left값 계산)
+  for(var inx=0, max=div_mn_header.length; inx<max && div_header == null; inx++) {
+    
+    if ( div_mn_header[inx].getAttribute("columnFix") == undefined ) {
+        div_header = div_mn_header[inx]; 
+    }
+  }
+  // 테이블이 위치할 position 결정
+  _divHeight = div_mn_tbody.offsetTop;  // 하단 div(bl, br) 영역의 Y 위치 
+  _divWidth = $(div_header).offset().left;    // 우측 div(tr, br) 영역의 X 위치
+  _divTop = findPosY(_div_mn);          // 상단 div(tl, tr) 영역의 Y 위치
+  _divLeft = findPosX(_div_mn);         // 좌측 div(tl, bl) 영역의 X 위치
+  // 페이징 영역의 현재 position 설정   
+  if (_pageDivId != "") {
+      divPage = document.getElementById(_pageDivId);
+      divPage.style.position = "absolute";
+      _divPageTop = findPosY(divPage);
+      _divPageLeft = findPosX(divPage);
+  }
+  _devideTable();   // 테이블을 4개의 div영역으로 둘러싼 테이블 분할
+  _resizeInit();
+
+  //selectedIndex란 attribute로 따로 세팅하고 cloneNode 후 다시 selected 세팅 (IE)
+  setSelectedAfterCloneNode(_div_tl.getElementsByTagName("SELECT"));
+  setSelectedAfterCloneNode(_div_tr.getElementsByTagName("SELECT"));
+  setSelectedAfterCloneNode(_div_bl.getElementsByTagName("SELECT"));
+  setSelectedAfterCloneNode(_div_br.getElementsByTagName("SELECT"));
+  
+  //엑셀 다운로드 시 div_mn의 th정보를 가져가므로 THEAD만 남기고 TBODY는 삭제
+  var _div_mn_tbody = _div_mn.getElementsByTagName( "TBODY" )[0];
+  _div_mn_tbody.parentNode.removeChild(_div_mn_tbody);
+  _div_mn.style.display = "none";
+}
+
+
+// SELECT의 경우 selected attribute가 cloneNode 함수를 통해 복사되지 않는다. (IE)
+// 따라서 selectedIndex란 attribute로 따로 세팅하고 cloneNode 후 다시 selected 세팅
+function setSelectedBeforeCloneNode( sels ) {
+	
+  if ( sels.length < 1 ) return;
+  
+  for(var inx=0, max=sels.length; inx<max; inx++) {
+	
+	  for( var jnx=0, maxJ=sels[inx].options.length; jnx<maxJ; jnx++) {
+		  
+		  if ( sels[inx].options[jnx].getAttribute( "selected" ) ) {
+			
+			  sels[inx].options[jnx].setAttribute( "isSelected", true );
+		  }
+	  }
+  }
+}
+
+// SELECT의 경우 selected attribute가 cloneNode 함수를 통해 복사되지 않는다. (IE)
+// 따라서 selectedIndex란 attribute로 따로 세팅하고 cloneNode 후 다시 selected 세팅
+function setSelectedAfterCloneNode( newSels ) {
+	
+  // SELECT의 selected 재 세팅
+  if ( newSels.length < 1 ) return;
+  
+  // cloneNode 후 SELECT의 선택된 옵션이 있을 경우 selected 해준다.
+  for(var inx=0, max=newSels.length; inx<max; inx++) {
+
+	  for( var jnx=0, maxJ=newSels[inx].options.length; jnx<maxJ; jnx++) {
+		  
+		  if ( newSels[inx].options[jnx].getAttribute( "isSelected" ) ) {
+			
+			  newSels[inx].options[jnx].setAttribute( "selected", true );
+		  }
+	  }
+  }
+}
+
+
+// 화면에서 절대 X 위치를 찾는 함수
+function findPosX(obj){
+    var curleft = 0;
+    if(obj.offsetParent) {
+        while(obj.offsetParent){
+            curleft += obj.offsetLeft;
+            obj = obj.offsetParent;
+        }
+    }
+
+    return curleft;
+}
+
+// 화면에서 절대 Y 위치를 찾는 함수
+function findPosY(obj) {
+    var curtop = 0;
+    if(obj.offsetParent) {
+        while(obj.offsetParent){
+            curtop += obj.offsetTop;
+            obj = obj.offsetParent;
+        }
+    }
+
+    return curtop;
+}
+
+// div로 둘러싸인 원본 테이블을 4개의 div 테이블 영역으로 분할하는 함수
+function _devideTable() { 
+  var isRemove;
+  var isContinue;
+
+  // _div_tl (devide) 
+  var div_tl_table = _div_tl.getElementsByTagName("table");
+  div_tl_table[0].id = "";
+  var div_tl_thead = div_tl_table[0].getElementsByTagName("thead"); 
+  var div_tl_tbody = div_tl_table[0].getElementsByTagName("tbody"); 
+  var div_tl_title = div_tl_thead[0].getElementsByTagName("tr"); 
+  var div_tl_header = div_tl_title[0].getElementsByTagName("th"); 
+  
+  div_tl_tbody[0].parentNode.removeChild(div_tl_tbody[0]);
+  
+  for (var j=0; j<div_tl_title.length; j++) {
+    div_tl_header = div_tl_title[j].getElementsByTagName("th");
+
+    for (i=div_tl_header.length - 1; i>= 0; i--) {
+      if(div_tl_header[i].getAttribute("columnFix") == undefined) {
+        div_tl_header[i].parentNode.removeChild(div_tl_header[i]);
+      } else {
+        //div_tl_header[i].style.width  = div_tl_header[i].getAttribute("fixWidth");
+        //div_tl_header[i].style.height = div_tl_header[i].getAttribute("fixHeight");
+        jQuery(div_tl_header[i]).width  ( div_tl_header[i].getAttribute("fixWidth") );
+        jQuery(div_tl_header[i]).height ( div_tl_header[i].getAttribute("fixHeight"));
+      }
+    }
+  } 
+
+  // _div_tr (devide) 
+  var div_tr_table = _div_tr.getElementsByTagName("table");
+  div_tr_table[0].id = "";
+  var div_tr_thead = div_tr_table[0].getElementsByTagName("thead"); 
+  var div_tr_tbody = div_tr_table[0].getElementsByTagName("tbody"); 
+  var div_tr_title = div_tr_thead[0].getElementsByTagName("tr"); 
+  
+  div_tr_tbody[0].parentNode.removeChild(div_tr_tbody[0]); 
+  for (j=0; j<div_tr_title.length; j++) { 
+    div_tr_header = div_tr_title[j].getElementsByTagName("th");
+    for (i=div_tr_header.length - 1; i>=0; i--) {
+      if (div_tr_header[i].getAttribute("columnFix") != undefined) {
+        div_tr_header[i].parentNode.removeChild(div_tr_header[i]);
+      } else {
+        //div_tr_header[i].style.width  = div_tr_header[i].getAttribute("fixWidth");
+        //div_tr_header[i].style.height = div_tr_header[i].getAttribute("fixHeight");
+	  	jQuery(div_tr_header[i]).width  ( div_tr_header[i].getAttribute("fixWidth"));
+		jQuery(div_tr_header[i]).height ( div_tr_header[i].getAttribute("fixHeight"));
+      }
+    } 
+  } 
+  
+  // _div_bl (devide) 
+  var div_bl_table = _div_bl.getElementsByTagName("table");
+  div_bl_table[0].id = ""; 
+  var div_bl_thead = div_bl_table[0].getElementsByTagName("thead"); 
+  var div_bl_tbody = div_bl_table[0].getElementsByTagName("tbody"); 
+  var div_bl_title = div_bl_tbody[0].getElementsByTagName("tr"); 
+  
+  div_bl_thead[0].parentNode.removeChild(div_bl_thead[0]); 
+  for (j=0; j<div_bl_title.length; j++) { 
+    div_bl_header = div_bl_title[j].getElementsByTagName("td"); 
+    for (i=div_bl_header.length - 1; i>= 0; i--) {
+      if(div_bl_header[i].getAttribute("columnFix") == undefined) {
+        div_bl_header[i].parentNode.removeChild(div_bl_header[i]);
+      } else {
+        if ( j<_rowFixCnt ) {    // 헤더 고정되는 행 갯수만큼만 너비를 지정
+          //div_bl_header[i].style.width  = div_bl_header[i].getAttribute("fixWidth");
+          jQuery(div_bl_header[i]).width  ( div_bl_header[i].getAttribute("fixWidth"));
+        }
+      }
+    }
+  } 
+
+  // _div_br (devide) 
+  var div_br_table = _div_br.getElementsByTagName("table");
+  div_br_table[0].id = "";
+  var div_br_thead = div_br_table[0].getElementsByTagName("thead"); 
+  var div_br_tbody = div_br_table[0].getElementsByTagName("tbody"); 
+  var div_br_title = div_br_tbody[0].getElementsByTagName("tr"); 
+
+  div_br_thead[0].parentNode.removeChild(div_br_thead[0]); 
+  for (j=0; j<div_br_title.length; j++) { 
+    div_br_header = div_br_title[j].getElementsByTagName("td"); 
+    for (i=div_br_header.length - 1; i>=0; i--) {
+      if (div_br_header[i].getAttribute("columnFix") != undefined) {
+        div_br_header[i].parentNode.removeChild(div_br_header[i]);
+      } else {
+        if ( j<_rowFixCnt ) { // 헤더 고정되는 행 갯수만큼만 너비를 지정
+          //div_br_header[i].style.width  = div_br_header[i].getAttribute("fixWidth");
+      	  jQuery(div_br_header[i]).width  ( div_br_header[i].getAttribute("fixWidth"));
+        }
+      }
+    } 
+  } 
+  
+}
+
+// 분할된 div 테이블 영역의 위치를 초기화하는 함수
+function _resizeInit() {
+  /*
+  // 페이징 Div영역 초기화
+  if ( _pageDivId != "") {
+      divPage.style.top =  _divPageTop + mainTitleHeight;
+      divPage.style.left =  _divPageLeft;
+  }
+  
+  _div_tl.style.top = _divTop + mainTitleHeight;
+  _div_br.style.top = _divTop + _divHeight + mainTitleHeight; 
+  _div_tr.style.top = _divTop + mainTitleHeight; 
+  _div_bl.style.top = _divTop + _divHeight + mainTitleHeight; 
+  _div_br.style.left = _divWidth + _divLeft; 
+  _div_tl.style.left = _divLeft;
+  _div_tr.style.left = _divWidth + _divLeft;
+  _div_bl.style.left = _divLeft;
+
+  _div_tl.style.display = "block"; 
+  _div_tr.style.display = "block"; 
+  _div_bl.style.display = "block"; 
+  _div_br.style.display = "block";
+   */
+  // 페이징 Div영역 초기화
+  if ( _pageDivId != "") {
+      jQuery(divPage).css("top",  _divPageTop + mainTitleHeight);
+      jQuery(divPage).css("left",  _divPageLeft );
+  }
+  _divWidth = jQuery(_div_tl).width();
+  jQuery(_div_tl).css("top", _divTop + mainTitleHeight);
+  jQuery(_div_br).css("top", _divTop + _divHeight + mainTitleHeight); 
+  jQuery(_div_tr).css("top", _divTop + mainTitleHeight); 
+  jQuery(_div_bl).css("top", _divTop + _divHeight + mainTitleHeight); 
+  jQuery(_div_br).css("left", _divWidth + _divLeft); 
+  jQuery(_div_tl).css("left", _divLeft);
+  jQuery(_div_tr).css("left", _divWidth + _divLeft);
+  jQuery(_div_bl).css("left", _divLeft);
+
+  jQuery(_div_tl).show(); 
+  jQuery(_div_tr).show();
+  jQuery(_div_bl).show();
+  jQuery(_div_br).show();
+
+  // 상단 헤더 틀고정 시 border 겹침 제거
+  //_div_bl.firstChild.style.marginTop = "-1px";    // 좌상단 테이블과 좌하단 테이블의 border가 겹치도록 1px을 뺀다. 
+  //_div_br.firstChild.style.marginTop = "-1px";    // 우상단 테이블과 우하단 테이블의 border가 겹치도록 1px을 뺀다.
+
+  // 좌측 헤더 틀고정 시 border 겹침 제거
+  //_div_tr.firstChild.style.marginLeft = "-1px";   // 좌상단 테이블과 우상단 테이블의 border가 겹치도록 1px을 뺀다. 
+  //_div_br.firstChild.style.marginLeft = "-1px";   // 좌하단 테이블과 우하단 테이블의 border가 겹치도록 1px을 뺀다. 
+
+  
+  // 전체 테이블에서 볼 때 하단과 우단 div영역에 선을 만든다.
+  //_div_br.style.borderBottom = "#d1d1d1 1px solid";
+  //_div_tl.style.borderLeft = "#d1d1d1 1px solid";
+  //_div_bl.style.borderLeft = "#d1d1d1 1px solid";
+  //_div_bl.style.borderBottom = "#d1d1d1 1px solid";
+  //_div_tr.style.borderRight = "#d1d1d1 1px solid";
+  //_div_br.style.borderRight = "#d1d1d1 1px solid";
+  
+  _resize();
+
+  window.onresize = _resize;
+}
+
+// 4개의 분할된 div 테이블의 크기를 화면에 맞게 조절하는 함수
+function _resize() { 
+  //_div_tl.style.pixelWidth = _divWidth; 
+  //_div_tr.style.pixelWidth = document.body.clientWidth - _divWidth - _divLeft  - marginLeft;
+  jQuery(_div_tl).width(_divWidth); 
+  jQuery(_div_tr).width(document.body.clientWidth - _divWidth - _divLeft  - marginLeft + _leftWidth );
+  
+  //_div_tl.style.pixelHeight = _divHeight; 
+  //_div_tr.style.pixelHeight = _divHeight;
+  jQuery(_div_tl).height(_divHeight); 
+  jQuery(_div_tr).height(_divHeight);
+
+  //_div_bl.style.pixelWidth = _divWidth;
+  //_div_br.style.pixelWidth = document.body.clientWidth - _divWidth - _divLeft - marginLeft ;
+  jQuery(_div_bl).width(_divWidth);
+  jQuery(_div_br).width(document.body.clientWidth - _divWidth - _divLeft - marginLeft + _leftWidth);
+  
+  //_div_bl.style.pixelHeight = document.body.clientHeight - _divTop - 60; // 40px; paging div area
+  //_div_br.style.pixelHeight = document.body.clientHeight - _divTop - 60; 
+  jQuery(_div_bl).height ( jQuery(window).height() - _divTop - 60); // 40px; paging div area
+  jQuery(_div_br).height ( jQuery(window).height() - _divTop - 60); 
+
+    // 페이징 처리 테이블 일때
+    if ( _pageDivId != "" ) { 
+        //_div_bl.style.pixelHeight -= 40;
+        //_div_br.style.pixelHeight -= 40;
+    	jQuery(_div_bl).height(jQuery(_div_bl).height()-40) ;
+    	jQuery(_div_br).height(jQuery(_div_br).height()-40) ;
+    }
+    // 화면에서 가로 너비, 세로 높이가 넘쳤는지 여부 확인
+    var isOverflowX = _div_br.scrollWidth > _div_br.clientWidth; 
+    var isOverflowY = _div_br.scrollHeight > _div_br.clientHeight; 
+
+    // 횡으로 overflow
+    if ( isOverflowX && !isOverflowY) {
+      //_div_bl.style.pixelHeight = _div_bl.getElementsByTagName("TABLE")[0].clientHeight;
+      //_div_br.style.pixelHeight = _div_br.getElementsByTagName("TABLE")[0].clientHeight + 17;
+      //jQuery(_div_bl).height ( _div_bl.getElementsByTagName("TABLE")[0].clientHeight + "px");
+      //jQuery(_div_br).height ( _div_bl.getElementsByTagName("TABLE")[0].clientHeight + 17 + "px");
+      //jQuery(_div_bl).height ( jQuery(_div_br).height()-17 );
+    	jQuery(_div_br).height(jQuery(_div_br).height()+17);
+    	jQuery(_div_bl).height(jQuery(_div_br).height()-17 );
+    } 
+    
+    // 종으로 overflow : ok
+    if ( !isOverflowX && isOverflowY ) {
+        //_div_br.style.pixelWidth += 17;
+        jQuery(_div_br).width(jQuery(_div_br).width()+17);
+    } 
+
+    // 횡과 종으로 모두 overflow : ok
+    if ( isOverflowX && isOverflowY ) {
+        //_div_br.style.pixelWidth  += 17;
+        //_div_br.style.pixelHeight += 17;
+    	//jQuery(_div_br).width(jQuery(_div_br).width()+17) ;
+    	//jQuery(_div_br).height(jQuery(_div_br).height()+17);
+    	//jQuery(_div_bl).height ( jQuery(_div_br).height()-17 );
+    	//jQuery(_div_tr).width(jQuery(_div_br).width()-17) ;
+    	jQuery(_div_br).height(jQuery(_div_br).height()+17);
+    	jQuery(_div_bl).height(jQuery(_div_br).height()-17 );
+
+    	jQuery(_div_br).width(jQuery(_div_tr).width()+17) ;
+    	//jQuery(_div_tr).width((_div_br).clientWidth) ;
+    	jQuery(_div_tr).width(jQuery(_div_br).width()-17)
+    }
+    
+    // overflow 없음 : ok
+    if ( !isOverflowX && !isOverflowY ) {
+        //_div_bl.style.pixelHeight = _div_bl.getElementsByTagName("TABLE")[0].clientHeight;
+        //_div_br.style.pixelHeight = _div_br.getElementsByTagName("TABLE")[0].clientHeight;
+        jQuery(_div_bl).height ( _div_bl.getElementsByTagName("TABLE")[0].clientHeight );
+        jQuery(_div_br).height ( _div_br.getElementsByTagName("TABLE")[0].clientHeight );
+    }
+  // TBODY 내용영역의 최소 height 설정 (지정한 minHeight 높이 이하로 줄어들지 않는다)
+  if (jQuery(_div_bl).height() < minHeight) {
+    //_div_bl.style.pixelHeight = minHeight - 17;
+    //_div_br.style.pixelHeight = minHeight;
+	  jQuery(_div_bl).height ( minHeight - 17);
+	  jQuery(_div_br).height ( minHeight);
+  } else {
+    //_div_bl.style.pixelHeight = _div_bl.style.pixelHeight;
+    //_div_br.style.pixelHeight = _div_br.style.pixelHeight;
+	  //jQuery(_div_bl).height ( jQuery(_div_br).height() );
+	  //jQuery(_div_br).height ( jQuery(_div_br).height() );
+    _div_bl.style.borderBottom = "#d1d1d1 1px solid";  // 좌하단 div영역에 border 삽입
+  }
+  
+    // 페이징 처리 테이블 일때
+    if ( _pageDivId != "" ) { 
+   
+        // 페이징 영역의 Top 위치 설정
+        //divPage.style.top = _divTop + _div_tr.clientHeight + _div_br.clientHeight + 25 + "px";	// 25px : 내용 테이블과의 여백
+        jQuery(divPage).css('top',_divTop + _div_tr.clientHeight + _div_br.clientHeight + 25 + "px");	// 25px : 내용 테이블과의 여백
+        jQuery(divPage).width(jQuery(_div_tl).width()+jQuery(_div_tr).width());	
+    } 
+  
+} 
+
+// 스크롤시 타 div 테이블 영역의 스크롤되게 하는 함수
+function _onScrolling() { 
+  _div_tr.scrollLeft = _div_br.scrollLeft; 
+  _div_bl.scrollTop  = _div_br.scrollTop; 
+}
+
+var _leftObjMargin = 10;
+var _leftWidth = 0;
+
+// clientWidth : scroll 제외 , $().width() : scroll 포함
+// scroll 이 없을때는 두 값이 같고 scroll이 있을때는 $().width()가 + 17만큼 더 크다.
+ 
+// 좌측메뉴 숨김상태일때 테이블 영역 redraw 
+function reDrawDataTableByLeft(leftObjId, flag_spread){
+	_leftObjMargin = 10;
+	_leftWidth = $(leftObjId).width();
+	
+	if(flag_spread == "hide"){
+		jQuery(_div_br).css("left", _div_br.offsetLeft - _leftWidth + _leftObjMargin); 
+		jQuery(_div_tl).css("left", _div_tl.offsetLeft - _leftWidth + _leftObjMargin);
+		jQuery(_div_tr).css("left", _div_tr.offsetLeft - _leftWidth + _leftObjMargin);
+		jQuery(_div_bl).css("left", _div_bl.offsetLeft - _leftWidth + _leftObjMargin);
+		
+		jQuery(divPage).css("left", divPage.offsetLeft - _leftWidth + _leftObjMargin);
+
+		jQuery(_div_tr).width($(_div_tr).width() + _leftWidth -_leftObjMargin) ;
+		jQuery(_div_br).width($(_div_br).width() + _leftWidth -_leftObjMargin) ;
+
+	}else if(flag_spread == "show"){
+		jQuery(_div_br).css("left", _div_br.offsetLeft + _leftWidth - _leftObjMargin); 
+		jQuery(_div_tl).css("left", _div_tl.offsetLeft + _leftWidth - _leftObjMargin);
+		jQuery(_div_tr).css("left", _div_tr.offsetLeft + _leftWidth - _leftObjMargin);
+		jQuery(_div_bl).css("left", _div_bl.offsetLeft + _leftWidth - _leftObjMargin);
+		
+		jQuery(divPage).css("left", divPage.offsetLeft + _leftWidth - _leftObjMargin);
+
+		jQuery(_div_tr).width($(_div_tr).width() - _leftWidth +_leftObjMargin) ;
+		jQuery(_div_br).width($(_div_br).width() - _leftWidth +_leftObjMargin) ;
+
+		_leftWidth = 0;
+	}
+
+    jQuery(divPage).width(jQuery(_div_tl).width()+jQuery(_div_tr).width());	
+    // 화면에서 가로 너비, 세로 높이가 넘쳤는지 여부 확인
+    var isOverflowY = _div_br.scrollHeight > _div_br.clientHeight; 
+ 
+    if ( isOverflowY ) {
+        //_div_br.style.pixelWidth += 17;
+    	//jQuery(_div_br).width(jQuery(_div_br).width()+17);
+    	jQuery(_div_br).width(jQuery(_div_tr).width()+17 + 17) ;
+    	jQuery(_div_tr).width((_div_br).clientWidth) ;
+    } 
+
+	
+}
+
