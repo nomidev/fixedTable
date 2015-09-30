@@ -934,3 +934,416 @@ function reDrawDataTableByLeft(leftObjId, flag_spread){
 	
 }
 
+
+/**
+ * Project : SCS_renewal
+ * Name : fixedTable.js
+ * Author: 노종민
+ * version : 0.7
+ * Date: 2015-09-30
+ * Desc: 
+ */
+
+var fixedTable = fixedTable || {};
+
+(function($) {
+	fixedTable = {
+		fixedDiv: null,
+		parentDiv: null,
+		cloneLeftTop: null,
+		cloneRightTop: null,
+		cloneLeftBottom: null,
+		cloneRightBottom: null,
+		cols: [],
+		pagingId: null,
+		tbodyMinHeight: 200,
+		scrollSize: 17,
+		setParent: function() {
+			this.parentDiv = this.fixedDiv.parent();
+		},
+		getParentWidth: function() {
+			return this.parentDiv.width();
+		},
+		getParentHeight: function() {
+			return this.parentDiv.height();
+		},
+		getFixedWidth: function() {
+			return this.fixedDiv.outerWidth(true);
+		},
+		getFixedHeight: function() {
+			return this.fixedDiv.outerHeight(true);
+		},
+		getPagingHeight: function() {
+			return this.pagingId.outerHeight(true);
+		},
+		getOffset: function() {
+			return this.parentDiv.offset();
+		},
+		getOffsetX: function() {
+			return this.getOffset().left;
+		},
+		getOffsetY: function() {
+			return this.getOffset().top + 2;
+		},
+		//테이블 복사
+		cloneNode: function() {
+			this.cloneLeftTop = this.fixedDiv.clone(true);
+			this.cloneRightTop = this.fixedDiv.clone(true);
+			this.cloneLeftBottom = this.fixedDiv.clone(true);
+			this.cloneRightBottom = this.fixedDiv.clone(true);
+		},
+		//테이블 분할
+		devideTable: function() {
+			this.setParent();
+			this.setColumnWidth();
+			this.setRowsHeight();
+			this.cloneNode();
+			this.appendTable(this.cloneLeftTop, "left", true);
+			this.appendTable(this.cloneRightTop, "right", true);
+			this.appendTable(this.cloneLeftBottom, "left", false);
+			this.appendTable(this.cloneRightBottom, "right", false);
+			this.render();
+			this.fixedDiv.remove();
+			this.fixedDiv = null;
+		},
+		//테이블 가로 사이즈 설정
+		setTableWidth: function(obj) {
+			obj.find("table").width(function() {
+				var sum = 0;
+				for (var i = 0; i < obj.find("col").length; i++) {
+					sum += parseInt(obj.find("col").eq(i).attr("width"));
+				}
+				return sum;
+			});
+		},
+		//클론된 테이블 삽입
+		appendTable: function(obj, position, bool) {
+			if (bool) {
+				if (obj.find("th[columnFix]").length) {
+					if (position == "left") {
+						obj.find("col").each(function(i, el){
+							if (i >= obj.find("table > thead > tr:first-child > th[columnFix]").length) {
+								$(el).remove();
+							}
+						});
+						obj.find("th").not("th[columnFix]").remove();
+						obj.attr("id", "fixed_frame_top_left_div");
+						obj.find("table").css("table-layout", "fixed");
+						this.setTableWidth(obj);
+					} else if (position == "right") {
+						obj.find("col").each(function(i, el){
+							if (i < obj.find("table > thead > tr:first-child > th[columnFix]").length) {
+								$(el).remove();
+							}
+						});
+						obj.find("th[columnFix]").remove();
+						obj.attr("id", "fixed_frame_top_right_div");
+						obj.find("table").css("table-layout", "fixed");
+						this.setTableWidth(obj);
+					}
+					obj.find("table > tbody").remove();
+					obj.appendTo(this.parentDiv);
+				} else {
+					if (position == "left") {
+						this.setTableWidth(obj);
+						obj.find("table > tbody").remove();
+						obj.attr("id", "fixed_frame_top_left_div");
+						obj.appendTo(this.parentDiv);
+					} else if (position == "right") {
+						obj.remove();
+						this.cloneRightTop = null;
+					}
+				}
+			} else {
+				if (obj.find("td[columnFix]").length) {
+					if (position == "left") {
+						obj.find("col").each(function(i, el){
+							if (i >= obj.find("table > tbody > tr:first-child > td[columnFix]").length) {
+								$(el).remove();
+							}
+						});
+						obj.find("td").not("td[columnFix]").remove();
+						obj.attr("id", "fixed_frame_bottom_left_div");
+						obj.find("table").css("table-layout", "fixed");
+						this.setTableWidth(obj);
+					} else if (position == "right") {
+						obj.find("col").each(function(i, el){
+							if (i < obj.find("table > tbody > tr:first-child > td[columnFix]").length) {
+								$(el).remove();
+							}
+						});
+						obj.attr("id", "fixed_frame_bottom_right_div");
+						obj.find("td[columnFix]").remove();
+						obj.find("table").css("table-layout", "fixed");
+						this.setTableWidth(obj);
+					}
+					obj.find("table > thead").remove();
+					obj.appendTo(this.parentDiv);
+				} else {
+					if (position == "left") {
+						this.setTableWidth(obj);
+						obj.find("table > thead").remove();
+						obj.attr("id", "fixed_frame_bottom_left_div");
+						obj.appendTo(this.parentDiv);
+					} else if (position == "right") {
+						obj.remove();
+						this.cloneRightBottom = null;
+					}
+				}
+			}
+		},
+		//테이블 열 사이즈 설정
+		setColumnWidth: function() {
+			var that = this;
+			var len = this.fixedDiv.find("table > tbody").children("tr:first-child").children("td").length;
+
+			for (var i = 0; i < len; i++) {
+				this.cols[i] = this.fixedDiv.find("table > tbody > tr > td").eq(i).outerWidth(true);
+			}
+
+			var colgroup = $('<colgroup></colgroup>');
+			this.fixedDiv.find("table > tbody > tr:first-child").children("td").each($.proxy(function(i, el) {
+				var col = $('<col width='+ that.cols[i] +'px>');
+				col.appendTo(colgroup);
+			}, that));
+			colgroup.prependTo(this.fixedDiv.find("table"));
+		},
+		//테이블 행 사이즈 설정
+		setRowsHeight: function() {
+			this.fixedDiv.find("table > thead > tr").each(function(i, el) {
+				$(el).outerHeight($(this).outerHeight());
+			});
+
+			this.fixedDiv.find("table > tbody > tr").each(function(i, el) {
+				$(el).outerHeight($(this).outerHeight());
+			});
+		},
+		//초기화면 렌더링
+		render: function() {
+			var winHeight = $(window).height();
+
+			//틀고정 상위 객체 높이 설정
+			this.parentDiv.outerHeight($.proxy(function() {
+				var selfHeight;
+
+				if (this.pagingId == null) {
+					selfHeight = winHeight - this.getOffsetY() - 15;
+				} else {
+					selfHeight = winHeight - this.getOffsetY() - this.getPagingHeight() - 15;
+				}
+
+				return selfHeight;
+			}, this));
+
+			//왼쪽 클론 객체
+			this.cloneLeftTop.css({
+				position: "absolute",
+				overflow: "hidden",
+				top: this.getOffsetY(),
+				left: this.getOffsetX()
+			}).width($.proxy(function() {
+				var h;
+				if (this.cloneRightBottom != null) {
+					h = $(this).find("table").outerWidth();
+				} else {
+					h = this.parentDiv.width();
+				}
+				return h;
+			}, this));
+
+			if (this.cloneRightTop === null) {
+				this.cloneLeftTop.css({
+					overflowX: "hidden",
+					overflowY: "scroll"
+				});
+			}
+
+			if (this.cloneRightTop != null) {
+				this.cloneRightTop.css({
+					position: "absolute",
+					overflowX: "hidden",
+					overflowY: "scroll",
+					top: this.getOffsetY(),
+					left: this.getOffsetX() + this.cloneLeftTop.width()
+				}).width($.proxy(function() {
+					return this.getParentWidth() - this.cloneLeftTop.width();
+				},this));
+			}
+
+			this.cloneLeftBottom.css({
+				position: "absolute",
+				top: this.getOffsetY() + this.cloneLeftTop.height(),
+				left: this.getOffsetX()
+			}).width($.proxy(function() {
+				var h;
+				if (this.cloneRightBottom != null) {
+					h = $(this).find("table").outerWidth();
+				} else {
+					h = this.parentDiv.width();
+				}
+				return h;
+			}, this)).height($.proxy(function() {
+				return this.getParentHeight() - this.cloneLeftTop.outerHeight();
+			}, this));
+
+			if (this.cloneRightBottom != null) {
+				this.cloneLeftBottom.css({
+					overflowX: "scroll",
+					overflowY: "hidden"
+				});
+			} else {
+				this.cloneLeftBottom.css({
+					overflow: "scroll"
+				});
+			}
+
+			if (this.cloneRightBottom != null) {
+				this.cloneRightBottom.css({
+					position: "absolute",
+					overflow: "scroll",
+					top: this.getOffsetY() + this.cloneRightTop.height(),
+					left: this.getOffsetX() + this.cloneLeftTop.width()
+				}).width($.proxy(function() {
+					return this.getParentWidth() - this.cloneLeftTop.width();
+				},this)).height($.proxy(function() {
+					return this.getParentHeight() - this.cloneLeftTop.outerHeight();
+				}, this));
+			}
+
+			$('html, body').css("overflow-x", "auto");
+		},
+		//클론된 객체끼리 스크롤을 동기화 시킨다.
+		scrollSync: function() {
+			if (this.cloneRightBottom != null) {
+				this.cloneRightBottom.scroll($.proxy(function() {
+					var scrollX = this.cloneRightBottom.scrollLeft();
+					var scrollY = this.cloneRightBottom.scrollTop();
+
+					this.cloneRightTop.scrollLeft(scrollX);
+					this.cloneLeftBottom.scrollTop(scrollY);
+				}, this));
+			} else {
+				this.cloneLeftBottom.scroll($.proxy(function() {
+					var scrollX = this.cloneLeftBottom.scrollLeft();
+
+					this.cloneLeftTop.scrollLeft(scrollX);
+				}, this));
+			}
+		},
+		//리사이즈시 각 클론 영역을 초기화
+		resizable: function() {
+			var winHeight = $(window).height();
+
+			this.parentDiv.outerHeight($.proxy(function() {
+				var selfHeight;
+
+				if (this.pagingId == null) {
+					selfHeight = winHeight - this.getOffsetY() - 15;
+				} else {
+					selfHeight = winHeight - this.getOffsetY() - this.getPagingHeight() - 15;
+				}
+
+				return selfHeight;
+			}, this));
+
+			this.cloneLeftTop.width($.proxy(function() {
+				var h;
+				if (this.cloneRightBottom != null) {
+					h = $(this).find("table").outerWidth();
+				} else {
+					h = this.parentDiv.width();
+				}
+				return h;
+			}, this)).stop().animate({
+				top: this.getOffsetY(),
+				left: this.getOffsetX()
+			});
+
+			if (this.cloneRightTop != null) {
+				this.cloneRightTop.width($.proxy(function() {
+					return this.getParentWidth() - this.cloneLeftTop.width();
+				},this)).stop().animate({
+					top: this.getOffsetY(),
+					left: this.getOffsetX() + this.cloneLeftTop.width()
+				});
+			}
+
+			this.cloneLeftBottom.width($.proxy(function() {
+				var h;
+				if (this.cloneRightBottom != null) {
+					h = $(this).find("table").outerWidth();
+				} else {
+					h = this.parentDiv.width();
+				}
+				return h;
+			}, this)).height($.proxy(function() {
+				return this.getParentHeight() - this.cloneLeftTop.outerHeight();
+			}, this)).stop().animate({
+				top: this.getOffsetY() + this.cloneLeftTop.height(),
+				left: this.getOffsetX()
+			});
+
+			if (this.cloneRightBottom != null) {
+				this.cloneRightBottom.width($.proxy(function() {
+					return this.getParentWidth() - this.cloneLeftTop.width();
+				},this)).height($.proxy(function() {
+					return this.getParentHeight() - this.cloneLeftTop.outerHeight();
+				}, this)).stop().animate({
+					top: this.getOffsetY() + this.cloneRightTop.height(),
+					left: this.getOffsetX() + this.cloneLeftTop.width()
+				});
+			}
+		},
+		//틀고정 초기화
+		init: function(fixedId, pagingId) {
+			var $fixedDiv = $("#" + fixedId);
+			this.fixedDiv = $fixedDiv;
+
+			if (pagingId != "undefinded") {
+				this.pagingId = $("#" + pagingId);
+			}
+
+			if (($fixedDiv).find("tbody").find("td").length <= 1) {
+				$fixedDiv.css("overflow", "auto");
+				return;
+			}
+
+			this.devideTable();
+			this.scrollSync();
+
+			//리사이즈시 resizable을 호출
+			$(window).resize(function() {
+				fixedTable.resizable();
+			});
+		}
+	};
+})(jQuery);
+
+//기존 프로그램을 위해 펑션을 두개 생성
+function headerFixInit(headerFixDivId, pageDivId) {
+	//페이지 선택시 로딩 이미지
+	try{
+		$("#pageDivId").find("select").on("change", function (){
+			showMessageImage(LoadingAnimation, aniImage01, true, 0, -100);
+		});
+		$("#pageDivId").find("a").on("click", function (){
+			showMessageImage(LoadingAnimation, aniImage01, true, 0, -100);
+		});
+	}catch(e){}
+
+	fixedTable.init(headerFixDivId, pageDivId);
+}
+
+function divFixInit(headerFixDivId, pageDivId) {
+	//페이지 선택시 로딩 이미지
+	try{
+		$("#pageDivId").find("select").on("change", function (){
+			showMessageImage(LoadingAnimation, aniImage01, true, 0, -100);
+		});
+		$("#pageDivId").find("a").on("click", function (){
+			showMessageImage(LoadingAnimation, aniImage01, true, 0, -100);
+		});
+	}catch(e){}
+
+	fixedTable.init(headerFixDivId, pageDivId);
+}
