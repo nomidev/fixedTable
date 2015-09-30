@@ -934,14 +934,13 @@ function reDrawDataTableByLeft(leftObjId, flag_spread){
 	
 }
 
-
 /**
  * Project : SCS_renewal
  * Name : fixedTable.js
  * Author: 노종민
- * version : 0.7
+ * version : 1.01
  * Date: 2015-09-30
- * Desc: 
+ * Desc:
  */
 
 var fixedTable = fixedTable || {};
@@ -967,14 +966,12 @@ var fixedTable = fixedTable || {};
 		getParentHeight: function() {
 			return this.parentDiv.height();
 		},
-		getFixedWidth: function() {
-			return this.fixedDiv.outerWidth(true);
-		},
-		getFixedHeight: function() {
-			return this.fixedDiv.outerHeight(true);
-		},
-		getPagingHeight: function() {
-			return this.pagingId.outerHeight(true);
+		getNextAllHeight: function() {
+			var nextHeight = 0;
+			this.parentDiv.nextAll().each(function(i, el) {
+				nextHeight += $(el).outerHeight(true);
+			});
+			return nextHeight;
 		},
 		getOffset: function() {
 			return this.parentDiv.offset();
@@ -998,10 +995,10 @@ var fixedTable = fixedTable || {};
 			this.setColumnWidth();
 			this.setRowsHeight();
 			this.cloneNode();
-			this.appendTable(this.cloneLeftTop, "left", true);
-			this.appendTable(this.cloneRightTop, "right", true);
-			this.appendTable(this.cloneLeftBottom, "left", false);
-			this.appendTable(this.cloneRightBottom, "right", false);
+			this.appendTable(this.cloneLeftTop, "left", "top");
+			this.appendTable(this.cloneRightTop, "right", "top");
+			this.appendTable(this.cloneLeftBottom, "left", "bottom");
+			this.appendTable(this.cloneRightBottom, "right", "bottom");
 			this.render();
 			this.fixedDiv.remove();
 			this.fixedDiv = null;
@@ -1017,10 +1014,13 @@ var fixedTable = fixedTable || {};
 			});
 		},
 		//클론된 테이블 삽입
-		appendTable: function(obj, position, bool) {
-			if (bool) {
+		//@param  {[objcet]} obj [복사된 객체]
+		//@param  {[position]} horizontal [객체의 가로 위치]
+		//@param  {[position]} vertical [객체의 세로 위치]
+		appendTable: function(obj, horizontal, vertical) {
+			if (vertical == "top") {
 				if (obj.find("th[columnFix]").length) {
-					if (position == "left") {
+					if (horizontal == "left") {
 						obj.find("col").each(function(i, el){
 							if (i >= obj.find("table > thead > tr:first-child > th[columnFix]").length) {
 								$(el).remove();
@@ -1030,7 +1030,7 @@ var fixedTable = fixedTable || {};
 						obj.attr("id", "fixed_frame_top_left_div");
 						obj.find("table").css("table-layout", "fixed");
 						this.setTableWidth(obj);
-					} else if (position == "right") {
+					} else if (horizontal == "right") {
 						obj.find("col").each(function(i, el){
 							if (i < obj.find("table > thead > tr:first-child > th[columnFix]").length) {
 								$(el).remove();
@@ -1044,19 +1044,19 @@ var fixedTable = fixedTable || {};
 					obj.find("table > tbody").remove();
 					obj.appendTo(this.parentDiv);
 				} else {
-					if (position == "left") {
+					if (horizontal == "left") {
 						this.setTableWidth(obj);
 						obj.find("table > tbody").remove();
 						obj.attr("id", "fixed_frame_top_left_div");
 						obj.appendTo(this.parentDiv);
-					} else if (position == "right") {
+					} else if (horizontal == "right") {
 						obj.remove();
 						this.cloneRightTop = null;
 					}
 				}
-			} else {
+			} else if (vertical == "bottom") {
 				if (obj.find("td[columnFix]").length) {
-					if (position == "left") {
+					if (horizontal == "left") {
 						obj.find("col").each(function(i, el){
 							if (i >= obj.find("table > tbody > tr:first-child > td[columnFix]").length) {
 								$(el).remove();
@@ -1066,7 +1066,7 @@ var fixedTable = fixedTable || {};
 						obj.attr("id", "fixed_frame_bottom_left_div");
 						obj.find("table").css("table-layout", "fixed");
 						this.setTableWidth(obj);
-					} else if (position == "right") {
+					} else if (horizontal == "right") {
 						obj.find("col").each(function(i, el){
 							if (i < obj.find("table > tbody > tr:first-child > td[columnFix]").length) {
 								$(el).remove();
@@ -1080,12 +1080,12 @@ var fixedTable = fixedTable || {};
 					obj.find("table > thead").remove();
 					obj.appendTo(this.parentDiv);
 				} else {
-					if (position == "left") {
+					if (horizontal == "left") {
 						this.setTableWidth(obj);
 						obj.find("table > thead").remove();
 						obj.attr("id", "fixed_frame_bottom_left_div");
 						obj.appendTo(this.parentDiv);
-					} else if (position == "right") {
+					} else if (horizontal == "right") {
 						obj.remove();
 						this.cloneRightBottom = null;
 					}
@@ -1095,17 +1095,23 @@ var fixedTable = fixedTable || {};
 		//테이블 열 사이즈 설정
 		setColumnWidth: function() {
 			var that = this;
-			var len = this.fixedDiv.find("table > tbody").children("tr:first-child").children("td").length;
+			var $tds = this.fixedDiv.find("table > tbody").find("tr").first().children("td");
+			var len = $tds.length;
 
+			//td의 width를 가져와 col 배열에 삽입
 			for (var i = 0; i < len; i++) {
-				this.cols[i] = this.fixedDiv.find("table > tbody > tr > td").eq(i).outerWidth(true);
+				this.cols[i] = $tds.eq(i).outerWidth(true);
 			}
 
 			var colgroup = $('<colgroup></colgroup>');
-			this.fixedDiv.find("table > tbody > tr:first-child").children("td").each($.proxy(function(i, el) {
-				var col = $('<col width='+ that.cols[i] +'px>');
+			var col;
+
+			//cols 배열의 값을 col에 삽입
+			for (var i = 0; i < this.cols.length; i++) {
+				col = $('<col width='+ that.cols[i] +'px>');
 				col.appendTo(colgroup);
-			}, that));
+			}
+
 			colgroup.prependTo(this.fixedDiv.find("table"));
 		},
 		//테이블 행 사이즈 설정
@@ -1126,16 +1132,18 @@ var fixedTable = fixedTable || {};
 			this.parentDiv.outerHeight($.proxy(function() {
 				var selfHeight;
 
-				if (this.pagingId == null) {
-					selfHeight = winHeight - this.getOffsetY() - 15;
+				if (this.pagingId != null || this.parentDiv.next()) {
+					selfHeight = winHeight - this.getOffsetY() - this.getNextAllHeight() - 15;
 				} else {
-					selfHeight = winHeight - this.getOffsetY() - this.getPagingHeight() - 15;
+					selfHeight = winHeight - this.getOffsetY() - 15;
 				}
 
 				return selfHeight;
-			}, this));
+			}, this)).css({
+				minHeight: this.cloneLeftTop.outerHeight() + this.tbodyMinHeight
+			});
 
-			//왼쪽 클론 객체
+			//왼쪽 상단 객체
 			this.cloneLeftTop.css({
 				position: "absolute",
 				overflow: "hidden",
@@ -1158,6 +1166,7 @@ var fixedTable = fixedTable || {};
 				});
 			}
 
+			//오른쪽 상단 객체
 			if (this.cloneRightTop != null) {
 				this.cloneRightTop.css({
 					position: "absolute",
@@ -1170,10 +1179,12 @@ var fixedTable = fixedTable || {};
 				},this));
 			}
 
+			//왼쪽 하단 객체
 			this.cloneLeftBottom.css({
 				position: "absolute",
 				top: this.getOffsetY() + this.cloneLeftTop.height(),
-				left: this.getOffsetX()
+				left: this.getOffsetX(),
+				minHeight: this.tbodyMinHeight
 			}).width($.proxy(function() {
 				var h;
 				if (this.cloneRightBottom != null) {
@@ -1197,12 +1208,14 @@ var fixedTable = fixedTable || {};
 				});
 			}
 
+			//오른쪽 하단 객체
 			if (this.cloneRightBottom != null) {
 				this.cloneRightBottom.css({
 					position: "absolute",
 					overflow: "scroll",
 					top: this.getOffsetY() + this.cloneRightTop.height(),
-					left: this.getOffsetX() + this.cloneLeftTop.width()
+					left: this.getOffsetX() + this.cloneLeftTop.width(),
+					minHeight: this.tbodyMinHeight
 				}).width($.proxy(function() {
 					return this.getParentWidth() - this.cloneLeftTop.width();
 				},this)).height($.proxy(function() {
@@ -1212,40 +1225,23 @@ var fixedTable = fixedTable || {};
 
 			$('html, body').css("overflow-x", "auto");
 		},
-		//클론된 객체끼리 스크롤을 동기화 시킨다.
-		scrollSync: function() {
-			if (this.cloneRightBottom != null) {
-				this.cloneRightBottom.scroll($.proxy(function() {
-					var scrollX = this.cloneRightBottom.scrollLeft();
-					var scrollY = this.cloneRightBottom.scrollTop();
-
-					this.cloneRightTop.scrollLeft(scrollX);
-					this.cloneLeftBottom.scrollTop(scrollY);
-				}, this));
-			} else {
-				this.cloneLeftBottom.scroll($.proxy(function() {
-					var scrollX = this.cloneLeftBottom.scrollLeft();
-
-					this.cloneLeftTop.scrollLeft(scrollX);
-				}, this));
-			}
-		},
 		//리사이즈시 각 클론 영역을 초기화
 		resizable: function() {
 			var winHeight = $(window).height();
 
 			this.parentDiv.outerHeight($.proxy(function() {
-				var selfHeight;
-
-				if (this.pagingId == null) {
-					selfHeight = winHeight - this.getOffsetY() - 15;
+				if (this.pagingId != null || this.parentDiv.next()) {
+					selfHeight = winHeight - this.getOffsetY() - this.getNextAllHeight() - 15;
 				} else {
-					selfHeight = winHeight - this.getOffsetY() - this.getPagingHeight() - 15;
+					selfHeight = winHeight - this.getOffsetY() - 15;
 				}
 
 				return selfHeight;
-			}, this));
+			}, this)).css({
+				minHeight: this.cloneLeftTop.outerHeight() + this.tbodyMinHeight
+			});
 
+			//왼쪽 상단 객체
 			this.cloneLeftTop.width($.proxy(function() {
 				var h;
 				if (this.cloneRightBottom != null) {
@@ -1259,6 +1255,7 @@ var fixedTable = fixedTable || {};
 				left: this.getOffsetX()
 			});
 
+			//오른쪽 상단 객체
 			if (this.cloneRightTop != null) {
 				this.cloneRightTop.width($.proxy(function() {
 					return this.getParentWidth() - this.cloneLeftTop.width();
@@ -1268,6 +1265,7 @@ var fixedTable = fixedTable || {};
 				});
 			}
 
+			//왼쪽 하단 객체
 			this.cloneLeftBottom.width($.proxy(function() {
 				var h;
 				if (this.cloneRightBottom != null) {
@@ -1283,6 +1281,7 @@ var fixedTable = fixedTable || {};
 				left: this.getOffsetX()
 			});
 
+			//오른쪽 하단 객체
 			if (this.cloneRightBottom != null) {
 				this.cloneRightBottom.width($.proxy(function() {
 					return this.getParentWidth() - this.cloneLeftTop.width();
@@ -1292,6 +1291,24 @@ var fixedTable = fixedTable || {};
 					top: this.getOffsetY() + this.cloneRightTop.height(),
 					left: this.getOffsetX() + this.cloneLeftTop.width()
 				});
+			}
+		},
+		//복사된 객체끼리 스크롤을 동기화 시킨다.
+		scrollSync: function() {
+			if (this.cloneRightBottom != null) {
+				this.cloneRightBottom.scroll($.proxy(function() {
+					var scrollX = this.cloneRightBottom.scrollLeft();
+					var scrollY = this.cloneRightBottom.scrollTop();
+
+					this.cloneRightTop.scrollLeft(scrollX);
+					this.cloneLeftBottom.scrollTop(scrollY);
+				}, this));
+			} else {
+				this.cloneLeftBottom.scroll($.proxy(function() {
+					var scrollX = this.cloneLeftBottom.scrollLeft();
+
+					this.cloneLeftTop.scrollLeft(scrollX);
+				}, this));
 			}
 		},
 		//틀고정 초기화
@@ -1319,7 +1336,7 @@ var fixedTable = fixedTable || {};
 	};
 })(jQuery);
 
-//기존 프로그램을 위해 펑션을 두개 생성
+//기존 프로그램과 호환성을 위해 headerFixInit과 divFixInit 함수 두개를 선언(기능은 같음)
 function headerFixInit(headerFixDivId, pageDivId) {
 	//페이지 선택시 로딩 이미지
 	try{
